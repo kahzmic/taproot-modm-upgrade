@@ -148,6 +148,8 @@ if args["TARGET_ENV"] == "sim":
         abspath(r"modm/ext/cmsis/dsp"),
         abspath(r"modm/ext/cmsis/core")
     ])
+    # Tell CMSIS-DSP it is compiled by a host GCC, not for a Cortex-M core
+    env.AppendUnique(CPPDEFINES=["__GNUC_PYTHON__"])
 elif args["TARGET_ENV"] == "tests":
     env.AppendUnique(CPPFLAGS=[
         "-DPLATFORM_HOSTED",
@@ -159,6 +161,8 @@ elif args["TARGET_ENV"] == "tests":
         abspath(r"modm/ext/cmsis/dsp"),
         abspath(r"modm/ext/cmsis/core")
     ])
+    # Tell CMSIS-DSP it is compiled by a host GCC, not for a Cortex-M core
+    env.AppendUnique(CPPDEFINES=["__GNUC_PYTHON__"])
 
     # Add flags necessary for coverage
     if COMMAND_LINE_TARGETS[0] == "run-tests-gcov":
