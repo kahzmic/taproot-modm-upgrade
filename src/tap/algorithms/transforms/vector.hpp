@@ -48,7 +48,7 @@ public:
     inline static Vector axis()
     {
         Vector v;
-        v[A] = NEG ? -1 : 1;
+        v.coordinates_[static_cast<int>(A)] = NEG ? -1 : 1;
         return v;
     }
 
