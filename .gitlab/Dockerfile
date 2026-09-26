@@ -21,7 +21,7 @@ RUN URL="https://github.com/google/googletest/archive/${GTEST_COMMIT}.tar.gz" \
 # Download ARM GCC
 FROM ubuntu:24.04 as gcc-arm
 
-ARG ARM_GCC_VERSION=13.3.rel1
+ARG ARM_GCC_VERSION=14.2.rel1
 
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qq --no-install-recommends \
@@ -60,7 +60,6 @@ COPY --from=run-clang-format /run-clang-format.py /
 
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qq --no-install-recommends \
-    clang-format \
     g++ \
     gcovr \
     git \
@@ -73,6 +72,7 @@ RUN apt-get update -qq \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --break-system-packages --root-user-action=ignore \
+    clang-format==10.0.1.1 \
     lbuild \
     pyelftools \
     scons
