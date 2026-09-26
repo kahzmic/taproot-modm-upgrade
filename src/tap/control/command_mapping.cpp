@@ -20,6 +20,7 @@
 #include "command_mapping.hpp"
 
 #include <algorithm>
+#include <vector>
 
 #include "tap/drivers.hpp"
 
@@ -35,9 +36,7 @@ CommandMapping::CommandMapping(
       mappedCommands(cmds),
       drivers(drivers)
 {
-    std::remove_if(mappedCommands.begin(), mappedCommands.end(), [](Command *c) {
-        return c == nullptr;
-    });
+    std::erase(mappedCommands, nullptr);
 }
 
 bool operator==(const CommandMapping &cm1, const CommandMapping &cm2)
