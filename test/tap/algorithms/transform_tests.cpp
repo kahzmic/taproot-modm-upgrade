@@ -466,6 +466,8 @@ std::vector<ApplyDynamicPosTestConfig> applyDynamicPosTestCases = {
      .e = DynamicPosition(0.0, 1.0, -1.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0)},
 };
 
+INSTANTIATE_TEST_SUITE_P(Transform, ApplyDynamicPosTest, ValuesIn(applyDynamicPosTestCases));
+
 struct ApplyDynamicOriTestConfig
 {
     Transform t;
