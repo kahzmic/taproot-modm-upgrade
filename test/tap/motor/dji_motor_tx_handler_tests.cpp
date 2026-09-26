@@ -216,37 +216,37 @@ TEST_F(DjiMotorTxHandlerTest, encodeAndSendCanData_valid_encoding)
     modm::can::Message can1MessageLow(
         DjiMotorTxHandler::CAN_DJI_LOW_IDENTIFIER,
         DjiMotorTxHandler::CAN_DJI_MESSAGE_SEND_LENGTH,
-        0,
+        uint64_t{0},
         false);
     convertToLittleEndian<int16_t>(1, can1MessageLow.data);
     modm::can::Message can1MessageHigh(
         DjiMotorTxHandler::CAN_DJI_HIGH_IDENTIFIER,
         DjiMotorTxHandler::CAN_DJI_MESSAGE_SEND_LENGTH,
-        0,
+        uint64_t{0},
         false);
     convertToLittleEndian<int16_t>(2, can1MessageHigh.data);
     modm::can::Message can1Message6020Current(
         DjiMotorTxHandler::CAN_DJI_6020_CURRENT_IDENTIFIER,
         DjiMotorTxHandler::CAN_DJI_MESSAGE_SEND_LENGTH,
-        0,
+        uint64_t{0},
         false);
     convertToLittleEndian<int16_t>(3, can1Message6020Current.data);
     modm::can::Message can2MessageLow(
         DjiMotorTxHandler::CAN_DJI_LOW_IDENTIFIER,
         DjiMotorTxHandler::CAN_DJI_MESSAGE_SEND_LENGTH,
-        0,
+        uint64_t{0},
         false);
     convertToLittleEndian<int16_t>(4, can2MessageLow.data);
     modm::can::Message can2MessageHigh(
         DjiMotorTxHandler::CAN_DJI_HIGH_IDENTIFIER,
         DjiMotorTxHandler::CAN_DJI_MESSAGE_SEND_LENGTH,
-        0,
+        uint64_t{0},
         false);
     convertToLittleEndian<int16_t>(5, can2MessageHigh.data);
     modm::can::Message can2Message6020Current(
         DjiMotorTxHandler::CAN_DJI_6020_CURRENT_IDENTIFIER,
         DjiMotorTxHandler::CAN_DJI_MESSAGE_SEND_LENGTH,
-        0,
+        uint64_t{0},
         false);
     convertToLittleEndian<int16_t>(6, can2Message6020Current.data);
 
