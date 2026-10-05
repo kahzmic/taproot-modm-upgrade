@@ -24,8 +24,6 @@
 #include "tap/communication/serial/ref_serial_constants.hpp"
 #include "tap/util_macros.hpp"
 
-#include "modm/processing/resumable.hpp"
-
 #include "dji_serial.hpp"
 #include "ref_serial_data.hpp"
 
@@ -40,15 +38,16 @@ namespace tap::communication::serial
  * Encapsulates logic for sending messages to the referee system. This includes sending
  * robot-to-robot communication messages and UI drawing instructions to the RoboMaster client.
  *
- * The instance member functions of this class that return a `modm::ResumableResult<void>` must be
- * used in a protothread or resumable function. In other words, member functions such as
- * `sendGraphic` must be in a call of `PT_CALL` or `RF_CALL`.
+ * The functions that send messages (`sendGraphic`, `deleteGraphicLayer`, `sendRobotToRobotMsg`)
+ * block until the message has been written, waiting on the referee system's transmission
+ * bandwidth limit. Inside a fiber they yield while waiting, so call them from a fiber other
+ * than the one running the control loop. Outside a fiber they busy-wait.
  *
- * This transmitter allows the user to send data to the referee system from multiple protothreads.
- * An instance of the ref serial transmitter should be instantiated for each protothread. If unique
+ * This transmitter allows the user to send data to the referee system from multiple fibers.
+ * An instance of the ref serial transmitter should be instantiated for each fiber. If unique
  * instances are not used, behavior is undefined.
  */
-class RefSerialTransmitter : public RefSerialData, public modm::Resumable<8>
+class RefSerialTransmitter : public RefSerialData
 {
 public:
     RefSerialTransmitter(Drivers* drivers);
@@ -217,7 +216,7 @@ public:
      * @param[in] graphicOperation Whether to delete a single layer or the entire screen.
      * @param[in] graphicLayer The layer to remove. Must be between 0-9
      */
-    mockable modm::ResumableResult<void> deleteGraphicLayer(
+    mockable void deleteGraphicLayer(
         Tx::DeleteGraphicOperation graphicOperation,
         uint8_t graphicLayer,
         bool doubleSend = false);
@@ -234,34 +233,34 @@ public:
      * @todo template instantiation?
      */
     ///@{
-    mockable modm::ResumableResult<void> sendGraphic(
+    mockable void sendGraphic(
         Tx::Graphic1Message* graphicMsg,
         bool configMsgHeader = true,
         bool sendMsg = true,
         bool doubleSend = true);
-    mockable modm::ResumableResult<void> sendGraphic(
+    mockable void sendGraphic(
         Tx::Graphic2Message* graphicMsg,
         bool configMsgHeader = true,
         bool sendMsg = true,
         bool doubleSend = true);
-    mockable modm::ResumableResult<void> sendGraphic(
+    mockable void sendGraphic(
         Tx::Graphic5Message* graphicMsg,
         bool configMsgHeader = true,
         bool sendMsg = true,
         bool doubleSend = true);
-    mockable modm::ResumableResult<void> sendGraphic(
+    mockable void sendGraphic(
         Tx::Graphic7Message* graphicMsg,
         bool configMsgHeader = true,
         bool sendMsg = true,
         bool doubleSend = true);
-    mockable modm::ResumableResult<void> sendGraphic(
+    mockable void sendGraphic(
         Tx::GraphicCharacterMessage* graphicMsg,
         bool configMsgHeader = true,
         bool sendMsg = true,
         bool doubleSend = true);
     ///@}
 
-    mockable modm::ResumableResult<void> sendRobotToRobotMsg(
+    mockable void sendRobotToRobotMsg(
         Tx::RobotToRobotMessage* robotToRobotMsg,
         uint16_t msgId,
         RobotId receiverId,
@@ -275,7 +274,7 @@ private:
      * Helper generic method for sending graphics
      */
     template <typename GRAPHIC>
-    modm::ResumableResult<void> sendGraphic_(
+    void sendGraphic_(
         GRAPHIC* graphicMsg,
         uint16_t messageId,
         bool configMsgHeader,
