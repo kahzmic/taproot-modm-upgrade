@@ -22,6 +22,7 @@
 
 #include "tap/algorithms/MahonyAHRS.h"
 #include "tap/algorithms/math_user_utils.hpp"
+#include "tap/architecture/driver_fiber.hpp"
 #include "tap/communication/sensors/imu/abstract_imu.hpp"
 #include "tap/communication/sensors/imu/imu_interface.hpp"
 #include "tap/communication/sensors/imu_heater/imu_heater.hpp"
@@ -55,6 +56,12 @@ class Bmi088 final_mockable : public Bmi088Data, public AbstractIMU
 public:
     Bmi088(Drivers *drivers) : AbstractIMU(), drivers(drivers), imuHeater(drivers) {}
     DISALLOW_COPY_AND_ASSIGN(Bmi088)
+
+    /**
+     * Starts a fiber that calls `read()` and yields, in a loop. Call once after the hardware is
+     * initialized and before `modm::fiber::Scheduler::run()`; then don't call `read()` yourself.
+     */
+    void startFiber() { fiber.start(); }
     mockable ~Bmi088() = default;
 
     static constexpr Acc::AccRange_t ACC_RANGE = Acc::AccRange::G3;
@@ -163,6 +170,10 @@ private:
 
         return static_cast<float>(shiftedTemp) * BMI088_TEMP_FACTOR + BMI088_TEMP_OFFSET;
     }
+
+private:
+    /// Calls `read()` and yields, in a loop, once started. Declared last so it is destroyed first.
+    tap::arch::DriverFiber<> fiber{[this] { read(); }};
 };
 
 }  // namespace tap::communication::sensors::imu::bmi088

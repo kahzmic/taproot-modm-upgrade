@@ -25,6 +25,7 @@ def init(module):
 
 def prepare(module, options):
     module.depends(
+        ":architecture",
         ":board",
         ":drivers"
     )

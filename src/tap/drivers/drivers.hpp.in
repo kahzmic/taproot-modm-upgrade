@@ -60,6 +60,21 @@ protected:
 %% endif
           {}
 
+public:
+    /**
+     * Starts the fiber of every driver that polls hardware (CAN receive, remote, referee serial,
+     * IMU). Call once after initializing those drivers and before `modm::fiber::Scheduler::run()`.
+     * Don't call their poll functions yourself afterwards.
+     */
+    void startFibers()
+    {
+%% for object_and_mock in object_and_mocks
+%% if object_and_mock["has-fiber"]
+        {{ object_and_mock["object-instance-name"] }}.startFiber();
+%% endif
+%% endfor
+    }
+
 #if defined(PLATFORM_HOSTED) && defined(ENV_UNIT_TESTS)
 %% for object_and_mock in object_and_mocks
     {{ object_and_mock["mock-object-name"] }} {{ object_and_mock["object-instance-name"] }};

@@ -59,6 +59,7 @@ DRIVERS_AND_MODULE_DEPENDENCIES = [
         "src-file": "tap/communication/can/can_rx_handler.hpp",
         "mock-header": "tap/mock/can_rx_handler_mock.hpp",
         "constructor": "this",
+        "has-fiber": True,
         "module-dependencies": [":communication:can"],
     },
     {
@@ -91,6 +92,7 @@ DRIVERS_AND_MODULE_DEPENDENCIES = [
         "src-file": "tap/communication/sensors/imu/mpu6500/mpu6500.hpp",
         "mock-header": "tap/mock/mpu6500_mock.hpp",
         "constructor": "this",
+        "has-fiber": True,
         "module-dependencies": [":communication:sensors:imu:mpu6500"],
     },
     {
@@ -99,6 +101,7 @@ DRIVERS_AND_MODULE_DEPENDENCIES = [
         "src-file": "tap/communication/serial/ref_serial.hpp",
         "mock-header": "tap/mock/ref_serial_mock.hpp",
         "constructor": "this",
+        "has-fiber": True,
         "module-dependencies": [":communication:serial:ref_serial"],
     },
     {
@@ -107,6 +110,7 @@ DRIVERS_AND_MODULE_DEPENDENCIES = [
         "src-file": "tap/communication/serial/remote.hpp",
         "mock-header": "tap/mock/remote_mock.hpp",
         "constructor": "this",
+        "has-fiber": True,
         "module-dependencies": [":communication:serial:remote"],
     },
     {
@@ -171,6 +175,7 @@ DRIVERS_AND_MODULE_DEPENDENCIES = [
         "src-file": "tap/communication/sensors/imu/bmi088/bmi088.hpp",
         "mock-header": "tap/mock/bmi088_mock.hpp",
         "constructor": "this",
+        "has-fiber": True,
         "module-dependencies": [":communication:sensors:imu:bmi088"],
     }
 ]
@@ -197,6 +202,7 @@ def get_object_and_mock_names(env):
                 "object-name": driver["object-name"],
                 "mock-object-name": driver["mock-object-name"],
                 "object-instance-name": object_instance_name_camel,
-                "constructor": driver["constructor"]
+                "constructor": driver["constructor"],
+                "has-fiber": driver.get("has-fiber", False),
             })
     return objects_and_mocks

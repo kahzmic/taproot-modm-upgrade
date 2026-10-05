@@ -23,6 +23,7 @@
 #include <cstdint>
 
 #include "tap/algorithms/crc.hpp"
+#include "tap/architecture/driver_fiber.hpp"
 #include "tap/communication/serial/uart.hpp"
 #include "tap/util_macros.hpp"
 
@@ -137,6 +138,13 @@ public:
      */
     DJISerial(Drivers *drivers, Uart::UartPort port, bool isRxCRCEnforcementEnabled = true);
     DISALLOW_COPY_AND_ASSIGN(DJISerial)
+
+    /**
+     * Starts a fiber that calls `updateSerial()` and yields, in a loop. Call once after the
+     * hardware is initialized and before `modm::fiber::Scheduler::run()`; then don't call
+     * `updateSerial()` yourself.
+     */
+    void startFiber() { fiber.start(); }
     mockable ~DJISerial() = default;
 
     /**
@@ -213,6 +221,11 @@ private:
 
 protected:
     Drivers *drivers;
+
+private:
+    /// Calls `updateSerial()` and yields, in a loop, once started. Declared last so it is destroyed
+    /// first.
+    tap::arch::DriverFiber<> fiber{[this] { updateSerial(); }};
 };
 
 }  // namespace tap::communication::serial
