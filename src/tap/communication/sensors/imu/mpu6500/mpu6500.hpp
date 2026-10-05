@@ -23,13 +23,13 @@
 #include <cstdint>
 
 #include "tap/algorithms/MahonyAHRS.h"
+#include "tap/architecture/driver_fiber.hpp"
 #include "tap/communication/sensors/imu/abstract_imu.hpp"
 #include "tap/communication/sensors/imu/imu_interface.hpp"
 #include "tap/communication/sensors/imu_heater/imu_heater.hpp"
 #include "tap/util_macros.hpp"
 
 #include "modm/math/geometry.hpp"
-#include "modm/processing/protothread.hpp"
 
 #define LITTLE_ENDIAN_INT16_TO_FLOAT(buff) \
     (static_cast<float>(static_cast<int16_t>((*(buff) << 8) | *(buff + 1))))
@@ -51,7 +51,7 @@ namespace tap::communication::sensors::imu::mpu6500
  * @note if you are shaking the imu while it is initializing, the offsets will likely
  *      be calibrated poorly and unexpectedly bad results may occur.
  */
-class Mpu6500 final_mockable : public ::modm::pt::Protothread, public AbstractIMU
+class Mpu6500 final_mockable : public AbstractIMU
 {
 public:
     /**
@@ -63,6 +63,12 @@ public:
 
     Mpu6500(Drivers *drivers);
     DISALLOW_COPY_AND_ASSIGN(Mpu6500)
+
+    /**
+     * Starts a fiber that calls `read()` and yields, in a loop. Call once after the hardware is
+     * initialized and before `modm::fiber::Scheduler::run()`; then don't call `read()` yourself.
+     */
+    void startFiber() { fiber.start(); }
     mockable ~Mpu6500() = default;
 
     /**
@@ -85,10 +91,10 @@ public:
     mockable void periodicIMUUpdate() override;
 
     /**
-     * Read data from the imu. This is a protothread that reads the SPI bus using
-     * nonblocking I/O.
+     * Read data from the imu if the read period has elapsed. The SPI transfer
+     * yields while waiting when called from a fiber and busy-waits otherwise.
      *
-     * @return `true` if the function is not done, `false` otherwise
+     * @return `true` if a new sample was read, `false` otherwise
      */
     mockable bool read();
 
@@ -131,8 +137,8 @@ private:
      */
     static constexpr uint8_t MPU6500_READ_BIT = 0x80;
 
-    uint8_t tx = 0;  ///< Byte used for reading data in the read protothread
-    uint8_t rx = 0;  ///< Byte used for reading data in the read protothread
+    uint8_t tx = 0;  ///< Byte used for reading data in `read()`
+    uint8_t rx = 0;  ///< Byte used for reading data in `read()`
 
     imu_heater::ImuHeater imuHeater;
 
@@ -169,6 +175,10 @@ private:
     void spiReadRegisters(uint8_t regAddr, uint8_t *pData, uint8_t len);
 
     float parseTemp(float temperature) { return 21.0f + temperature / 333.87f; }
+
+private:
+    /// Calls `read()` and yields, in a loop, once started. Declared last so it is destroyed first.
+    tap::arch::DriverFiber<> fiber{[this] { read(); }};
 };
 
 }  // namespace tap::communication::sensors::imu::mpu6500
