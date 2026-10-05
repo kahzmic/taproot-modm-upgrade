@@ -1,5 +1,13 @@
 # Taproot Changelog
 
+## October 2026
+- **Breaking:** Taproot no longer uses modm protothreads or resumable functions, which modm has deprecated and will remove. Waiting is done with modm fibers instead.
+  - `Mpu6500` is no longer a `modm::pt::Protothread`. `read()` returns immediately until the read period has elapsed, then reads one sample (like `Bmi088::read()`) and returns `true`.
+  - `RefSerialTransmitter::sendGraphic`, `deleteGraphicLayer`, and `sendRobotToRobotMsg`, and `StateHUDIndicator::initialize` and `draw`, now return `void` and block until done. Call them from a fiber (they yield while waiting), not inside `PT_CALL`/`RF_CALL`.
+  - `Sh1106::updateNonblocking()` and `Sh1107::updateNonblocking()` are replaced by `bool sendFramebuffer()`, which blocks (yielding inside a fiber) until the buffer is sent.
+  - Code that waits in protothreads (`PT_WAIT_UNTIL`, `RF_WAIT_UNTIL`) must run inside a fiber with `modm::fiber::Scheduler::run()` in `main`; outside a fiber those waits spin forever. See `docs/examples/fiber_main.cpp` for an example layout.
+- **Breaking:** drivers that poll hardware now each own a fiber: `CanRxHandler` (`pollCanData`), `Remote` (`read`), `DJISerial` and so `RefSerial` (`updateSerial`), `Mpu6500` and `Bmi088` (`read`). After initializing them, call `Drivers::startFibers()` (or `startFiber()` on a single driver), then `modm::fiber::Scheduler::run()`. Stop calling those functions from the main loop. The fibers are created stopped, so constructing or destroying drivers (e.g. in unit tests) never starts them.
+
 ## February 2026
 - Massively refactored the module system. Most projects should still work, might need to explicitly add some more modules that were transitively included.
   - If you are depending solely on the `core` module, you might need to include the `error`, `pwm`, and `profiler` modules.
