@@ -7,6 +7,32 @@
         <gpio alias="Can2Tx" name="GpioB6"></gpio>
     </can-pins>
     <gpio-pins>
+        <gpio alias="PWM1" name="GpioA0">
+            <!-- PWM header, powered by the switchable 5V rail (PC15) -->
+            <timer name="Timer2" channel="Ch1"></timer>
+        </gpio>
+        <gpio alias="PWM2" name="GpioA2">
+            <timer name="Timer2" channel="Ch3"></timer>
+        </gpio>
+        <gpio alias="PWM3" name="GpioE9">
+            <timer name="Timer1" channel="Ch1"></timer>
+        </gpio>
+        <gpio alias="PWM4" name="GpioE13">
+            <timer name="Timer1" channel="Ch3"></timer>
+        </gpio>
+        <gpio alias="Buzzer" name="GpioB15">
+            <timer name="Timer12" channel="Ch2"></timer>
+        </gpio>
+        <gpio alias="ImuHeater" name="GpioB1">
+            <timer name="Timer3" channel="Ch4"></timer>
+        </gpio>
+        <gpio alias="Button" name="GpioA15"></gpio>
+        <gpio alias="PE14" name="GpioE14">
+            <!-- Expansion header pin 13 -->
+        </gpio>
+        <gpio alias="PD10" name="GpioD10">
+            <!-- LCD header pin 9 -->
+        </gpio>
     </gpio-pins>
     <uart-ports>
         <uart sync="true" name="1" tx="GpioA9" rx="GpioA10"></uart>
