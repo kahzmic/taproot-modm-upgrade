@@ -22,7 +22,6 @@
 
 #include "modm/architecture/driver/atomic/flag.hpp"
 #include "modm/architecture/interface/delay.hpp"
-#include "modm/processing/resumable.hpp"
 #include "modm/ui/display/monochrome_graphic_display_vertical.hpp"
 
 namespace tap
@@ -42,7 +41,7 @@ template <
     unsigned int Height,
     bool Flipped,
     bool Rotate>
-class Sh1107 : public modm::MonochromeGraphicDisplayVertical<Width, Height>, modm::Resumable<1>
+class Sh1107 : public modm::MonochromeGraphicDisplayVertical<Width, Height>
 {
 public:
     virtual ~Sh1107() {}
@@ -55,9 +54,14 @@ public:
     virtual void update();
 
     /**
-     * Update the display with the content of the RAM buffer.
+     * If `update()` requested a re-paint, sends the RAM buffer to the display.
+     *
+     * Blocks until the whole buffer is sent. The SPI transfers yield between bytes when called
+     * from a fiber, so call it from a fiber other than the control loop's.
+     *
+     * @return `true` if the buffer was sent, `false` if no re-paint was requested.
      */
-    modm::ResumableResult<bool> updateNonblocking();
+    bool sendFramebuffer();
 
     /**
      * Invert the display content.
@@ -76,8 +80,7 @@ private:
     uint8_t rotatedMatrix[Height / 8][Width] = {0};
 
     /**
-     * Variables used in `updateNonblocking`. Since it is generally not a good idea
-     * to have local variables in protothreads these are stored by this class.
+     * Loop variables used in `sendFramebuffer`.
      */
     uint8_t x, y;
 
