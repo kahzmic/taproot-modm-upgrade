@@ -45,6 +45,7 @@ def build(env):
     env.copy("clock.cpp")
     env.copy("clock.hpp")
     env.copy("conditional_timer.hpp")
+    env.copy("driver_fiber.hpp")
     env.copy("endianness_wrappers.hpp")
     env.copy("periodic_timer.hpp")
     env.copy("timeout.hpp")
