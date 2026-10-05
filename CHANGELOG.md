@@ -7,7 +7,8 @@
   - `Sh1106::updateNonblocking()` and `Sh1107::updateNonblocking()` are replaced by `bool sendFramebuffer()`, which blocks (yielding inside a fiber) until the buffer is sent.
   - Code that waits in protothreads (`PT_WAIT_UNTIL`, `RF_WAIT_UNTIL`) must run inside a fiber with `modm::fiber::Scheduler::run()` in `main`; outside a fiber those waits spin forever. See `docs/examples/fiber_main.cpp` for an example layout.
 - **Breaking:** drivers that poll hardware now each own a fiber: `CanRxHandler` (`pollCanData`), `Remote` (`read`), `DJISerial` and so `RefSerial` (`updateSerial`), `Mpu6500` and `Bmi088` (`read`). After initializing them, call `Drivers::startFibers()` (or `startFiber()` on a single driver), then `modm::fiber::Scheduler::run()`. Stop calling those functions from the main loop. The fibers are created stopped, so constructing or destroying drivers (e.g. in unit tests) never starts them.
-- Added the `dm-mc02` board (Damiao DM-MC02, STM32H723). Board skeleton only: CAN, GPIO pins, IMU and analog are not supported yet.
+- Added the `dm-mc02` board (Damiao DM-MC02, STM32H723): UARTs, remote, GPIO, PWM, buzzer, BMI088 IMU and heater. CAN and analog are not supported yet.
+- `Pwm` now stores each timer's overflow as 32 bits, so PWM on 32-bit timers (TIM2/TIM5) gets the right duty when the overflow exceeds 65535.
 
 ## February 2026
 - Massively refactored the module system. Most projects should still work, might need to explicitly add some more modules that were transitively included.
