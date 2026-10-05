@@ -28,7 +28,7 @@
 #include "tap/util_macros.hpp"
 
 #include "modm/container/deque.hpp"
-#include "modm/processing/protothread/semaphore.hpp"
+#include "modm/processing/fiber/semaphore.hpp"
 
 #include "dji_serial.hpp"
 #include "ref_serial_data.hpp"
@@ -157,13 +157,14 @@ public:
     /**
      * Used by `RefSerialTransmitter`. Attempts to acquire transmission semaphore.
      *
-     * @note should be called only using RF_WAIT_UNTIL to block until acquiring semaphore.
+     * @return `true` if the semaphore was acquired. Does not block; callers that need to wait
+     * should poll it with `modm::this_fiber::poll`.
      */
     mockable bool acquireTransmissionSemaphore()
     {
         if (transmissionDelayTimer.isExpired() || transmissionDelayTimer.isStopped())
         {
-            return transmissionSemaphore.acquire();
+            return transmissionSemaphore.try_acquire();
         }
         return false;
     }
@@ -196,7 +197,7 @@ private:
     modm::BoundedDeque<Rx::DamageEvent, DPS_TRACKER_DEQUE_SIZE> receivedDpsTracker;
     arch::MilliTimeout refSerialOfflineTimeout;
     std::unordered_map<uint16_t, RobotToRobotMessageHandler*> msgIdToRobotToRobotHandlerMap;
-    modm::pt::Semaphore transmissionSemaphore;
+    modm::fiber::binary_semaphore transmissionSemaphore;
     tap::arch::MilliTimeout transmissionDelayTimer;
 
     /**
