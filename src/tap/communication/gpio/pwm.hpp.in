@@ -101,7 +101,7 @@ private:
      * This is what the Auto Reload Register is set to and the pwm duty is scaled to
      * a value between 0 and this value.
      */
-    uint16_t {{ timer|lower }}CalculatedOverflow;
+    uint32_t {{ timer|lower }}CalculatedOverflow;
 %% endfor
 };  // class Pwm
 
