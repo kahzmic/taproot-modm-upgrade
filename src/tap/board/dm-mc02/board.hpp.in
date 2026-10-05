@@ -167,6 +167,17 @@ using {{ pin_group_name }}s = SoftwareGpioPort<{% for pin in pins %}{{ pin_group
 {{ configure_pins("Initialize PWM pins", "PWMOutPin", pwm_pins) }}
 {{ configure_pins("Initialize digital input pins", "DigitalInPin", digital_in_pins) }}
 {{ configure_pins("Initialize digital output pins", "DigitalOutPin", digital_out_pins) }}
+// gpio pins used for SPI communication to the onboard BMI088 IMU
+using ImuSck = GpioB13;
+using ImuMiso = GpioC2;  // PC2_C pad
+using ImuMosi = GpioC1;
+using ImuCS1Accel = GpioC0;
+using ImuCS1Gyro = GpioC3;  // PC3_C pad
+using ImuInt1Accel = GpioE10;
+using ImuInt1Gyro = GpioE12;
+using ImuHeater = GpioB1;
+using ImuSpiMaster = SpiMaster2;
+
 // Enables for the two XT30 power outputs and the switchable 5V rail (PWM header)
 using PowerOut1 = GpioOutputC14;
 using PowerOut2 = GpioOutputC13;

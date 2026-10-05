@@ -23,7 +23,7 @@ def init(module):
 def prepare(module, options):
     module.depends(":communication:sensors:imu_heater")
     module.depends(":communication:sensors:imu")
-    return options[":dev_board"] == "rm-dev-board-c"
+    return options[":dev_board"] in ["rm-dev-board-c", "dm-mc02"]
 
 def build(env):
     env.outbasepath = "taproot/src/tap/communication/sensors/imu/bmi088"
