@@ -24,6 +24,8 @@
 #include "tap/drivers.hpp"
 #include "tap/errors/create_errors.hpp"
 
+#include "modm/architecture/interface/fiber.hpp"
+
 #include "ref_serial.hpp"
 
 namespace tap::communication::serial
@@ -192,15 +194,14 @@ static uint16_t getRobotClientID(RefSerialTransmitter::RobotId robotId)
     return 0x100 + static_cast<uint16_t>(robotId);
 }
 
-modm::ResumableResult<void> RefSerialTransmitter::deleteGraphicLayer(
+void RefSerialTransmitter::deleteGraphicLayer(
     Tx::DeleteGraphicOperation graphicOperation,
     uint8_t graphicLayer,
     bool doubleSend)
 {
-    RF_BEGIN(0);
     if (drivers->refSerial.getRobotData().robotId == RefSerialTransmitter::RobotId::INVALID)
     {
-        RF_RETURN();
+        return;
     }
 
     deleteGraphicLayerMessage.deleteOperation = graphicOperation;
@@ -224,7 +225,7 @@ modm::ResumableResult<void> RefSerialTransmitter::deleteGraphicLayer(
         reinterpret_cast<uint8_t*>(&deleteGraphicLayerMessage),
         sizeof(Tx::DeleteGraphicLayerMessage) - sizeof(deleteGraphicLayerMessage.crc16));
 
-    RF_WAIT_UNTIL(drivers->refSerial.acquireTransmissionSemaphore());
+    modm::this_fiber::poll([&] { return drivers->refSerial.acquireTransmissionSemaphore(); });
 
     drivers->uart.write(
         bound_ports::REF_SERIAL_UART_PORT,
@@ -235,7 +236,7 @@ modm::ResumableResult<void> RefSerialTransmitter::deleteGraphicLayer(
 
     if (doubleSend)
     {
-        RF_WAIT_UNTIL(drivers->refSerial.acquireTransmissionSemaphore());
+        modm::this_fiber::poll([&] { return drivers->refSerial.acquireTransmissionSemaphore(); });
 
         drivers->uart.write(
             bound_ports::REF_SERIAL_UART_PORT,
@@ -244,8 +245,6 @@ modm::ResumableResult<void> RefSerialTransmitter::deleteGraphicLayer(
 
         drivers->refSerial.releaseTransmissionSemaphore();
     }
-
-    RF_END();
 }
 
 /**
@@ -255,7 +254,7 @@ modm::ResumableResult<void> RefSerialTransmitter::deleteGraphicLayer(
  * the sendGraphic functions all send messages the same way with only minor differences.
  */
 template <typename GRAPHIC>
-modm::ResumableResult<void> RefSerialTransmitter::sendGraphic_(
+void RefSerialTransmitter::sendGraphic_(
     GRAPHIC* graphicMsg,
     uint16_t messageId,
     bool configMsgHeader,
@@ -265,10 +264,9 @@ modm::ResumableResult<void> RefSerialTransmitter::sendGraphic_(
     uint8_t extraDataLength,
     bool doubleSend)
 {
-    RF_BEGIN(1);
     if (robotId == RefSerialTransmitter::RobotId::INVALID)
     {
-        RF_RETURN();
+        return;
     }
     if (configMsgHeader)
     {
@@ -288,7 +286,7 @@ modm::ResumableResult<void> RefSerialTransmitter::sendGraphic_(
     }
     if (sendMsg)
     {
-        RF_WAIT_UNTIL(drivers->refSerial.acquireTransmissionSemaphore());
+        modm::this_fiber::poll([&] { return drivers->refSerial.acquireTransmissionSemaphore(); });
 
         drivers->uart.write(
             bound_ports::REF_SERIAL_UART_PORT,
@@ -299,7 +297,8 @@ modm::ResumableResult<void> RefSerialTransmitter::sendGraphic_(
 
         if (doubleSend)
         {
-            RF_WAIT_UNTIL(drivers->refSerial.acquireTransmissionSemaphore());
+            modm::this_fiber::poll(
+                [&] { return drivers->refSerial.acquireTransmissionSemaphore(); });
 
             drivers->uart.write(
                 bound_ports::REF_SERIAL_UART_PORT,
@@ -309,17 +308,15 @@ modm::ResumableResult<void> RefSerialTransmitter::sendGraphic_(
             drivers->refSerial.releaseTransmissionSemaphore();
         }
     }
-    RF_END();
 }
 
-modm::ResumableResult<void> RefSerialTransmitter::sendGraphic(
+void RefSerialTransmitter::sendGraphic(
     Tx::Graphic1Message* graphicMsg,
     bool configMsgHeader,
     bool sendMsg,
     bool doubleSend)
 {
-    RF_BEGIN(2);
-    RF_RETURN_CALL(sendGraphic_<Tx::Graphic1Message>(
+    sendGraphic_<Tx::Graphic1Message>(
         graphicMsg,
         0x101,
         configMsgHeader,
@@ -327,18 +324,16 @@ modm::ResumableResult<void> RefSerialTransmitter::sendGraphic(
         drivers->refSerial.getRobotData().robotId,
         drivers,
         0,
-        doubleSend));
-    RF_END();
+        doubleSend);
 }
 
-modm::ResumableResult<void> RefSerialTransmitter::sendGraphic(
+void RefSerialTransmitter::sendGraphic(
     Tx::Graphic2Message* graphicMsg,
     bool configMsgHeader,
     bool sendMsg,
     bool doubleSend)
 {
-    RF_BEGIN(3);
-    RF_RETURN_CALL(sendGraphic_<Tx::Graphic2Message>(
+    sendGraphic_<Tx::Graphic2Message>(
         graphicMsg,
         0x102,
         configMsgHeader,
@@ -346,18 +341,16 @@ modm::ResumableResult<void> RefSerialTransmitter::sendGraphic(
         drivers->refSerial.getRobotData().robotId,
         drivers,
         0,
-        doubleSend));
-    RF_END();
+        doubleSend);
 }
 
-modm::ResumableResult<void> RefSerialTransmitter::sendGraphic(
+void RefSerialTransmitter::sendGraphic(
     Tx::Graphic5Message* graphicMsg,
     bool configMsgHeader,
     bool sendMsg,
     bool doubleSend)
 {
-    RF_BEGIN(4);
-    RF_RETURN_CALL(sendGraphic_<Tx::Graphic5Message>(
+    sendGraphic_<Tx::Graphic5Message>(
         graphicMsg,
         0x103,
         configMsgHeader,
@@ -365,18 +358,16 @@ modm::ResumableResult<void> RefSerialTransmitter::sendGraphic(
         drivers->refSerial.getRobotData().robotId,
         drivers,
         0,
-        doubleSend));
-    RF_END();
+        doubleSend);
 }
 
-modm::ResumableResult<void> RefSerialTransmitter::sendGraphic(
+void RefSerialTransmitter::sendGraphic(
     Tx::Graphic7Message* graphicMsg,
     bool configMsgHeader,
     bool sendMsg,
     bool doubleSend)
 {
-    RF_BEGIN(5);
-    RF_RETURN_CALL(sendGraphic_<Tx::Graphic7Message>(
+    sendGraphic_<Tx::Graphic7Message>(
         graphicMsg,
         0x104,
         configMsgHeader,
@@ -384,18 +375,16 @@ modm::ResumableResult<void> RefSerialTransmitter::sendGraphic(
         drivers->refSerial.getRobotData().robotId,
         drivers,
         0,
-        doubleSend));
-    RF_END();
+        doubleSend);
 }
 
-modm::ResumableResult<void> RefSerialTransmitter::sendGraphic(
+void RefSerialTransmitter::sendGraphic(
     Tx::GraphicCharacterMessage* graphicMsg,
     bool configMsgHeader,
     bool sendMsg,
     bool doubleSend)
 {
-    RF_BEGIN(6);
-    RF_RETURN_CALL(sendGraphic_<Tx::GraphicCharacterMessage>(
+    sendGraphic_<Tx::GraphicCharacterMessage>(
         graphicMsg,
         0x110,
         configMsgHeader,
@@ -403,18 +392,15 @@ modm::ResumableResult<void> RefSerialTransmitter::sendGraphic(
         drivers->refSerial.getRobotData().robotId,
         drivers,
         MODM_ARRAY_SIZE(graphicMsg->msg),
-        doubleSend));
-    RF_END();
+        doubleSend);
 }
 
-modm::ResumableResult<void> RefSerialTransmitter::sendRobotToRobotMsg(
+void RefSerialTransmitter::sendRobotToRobotMsg(
     Tx::RobotToRobotMessage* robotToRobotMsg,
     uint16_t msgId,
     RobotId receiverId,
     uint16_t msgLen)
 {
-    RF_BEGIN(7);
-
     if (msgLen == 1)
     {
         RAISE_ERROR(drivers, "message length cannot be 1 byte")
@@ -423,18 +409,18 @@ modm::ResumableResult<void> RefSerialTransmitter::sendRobotToRobotMsg(
     if (msgId < 0x0200 || msgId >= 0x02ff)
     {
         RAISE_ERROR(drivers, "invalid msgId not between [0x200, 0x2ff)");
-        RF_RETURN();
+        return;
     }
 
     if (msgLen > 113)
     {
         RAISE_ERROR(drivers, "message length > 113-char maximum");
-        RF_RETURN();
+        return;
     }
 
     if (drivers->refSerial.getRobotData().robotId == RobotId::INVALID)
     {
-        RF_RETURN();
+        return;
     }
 
     configFrameHeader(
@@ -458,7 +444,7 @@ modm::ResumableResult<void> RefSerialTransmitter::sendRobotToRobotMsg(
             reinterpret_cast<uint8_t*>(robotToRobotMsg),
             FULL_MSG_SIZE_LESS_MSGLEN + msgLen);
 
-    RF_WAIT_UNTIL(drivers->refSerial.acquireTransmissionSemaphore());
+    modm::this_fiber::poll([&] { return drivers->refSerial.acquireTransmissionSemaphore(); });
 
     drivers->uart.write(
         bound_ports::REF_SERIAL_UART_PORT,
@@ -466,8 +452,6 @@ modm::ResumableResult<void> RefSerialTransmitter::sendRobotToRobotMsg(
         FULL_MSG_SIZE_LESS_MSGLEN + msgLen + sizeof(uint16_t));
 
     drivers->refSerial.releaseTransmissionSemaphore();
-
-    RF_END();
 }
 
 void RefSerialTransmitter::configFrameHeader(DJISerial::FrameHeader* header, uint16_t msgLen)

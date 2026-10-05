@@ -35,6 +35,9 @@ protected:
     void SetUp() override
     {
         ON_CALL(drivers.refSerial, getRobotData()).WillByDefault(ReturnRef(robotData));
+        // Sends wait (poll) until the semaphore is acquired, so a default of `false` would spin
+        // forever.
+        ON_CALL(drivers.refSerial, acquireTransmissionSemaphore).WillByDefault(Return(true));
     }
 
     template <typename T>
@@ -198,10 +201,7 @@ TEST_F(RefSerialTransmitterTest, deleteGraphicLayer__blocks_on_transmission_sema
 
     EXPECT_CALL(drivers.uart, write(testing::_, testing::_, testing::_));
 
-    refSerialTransmitter.deleteGraphicLayer(
-        RefSerialData::Tx::DeleteGraphicOperation::DELETE_GRAPHIC_LAYER,
-        2);
-
+    // A single call keeps polling the semaphore until it is acquired, then sends once.
     refSerialTransmitter.deleteGraphicLayer(
         RefSerialData::Tx::DeleteGraphicOperation::DELETE_GRAPHIC_LAYER,
         2);
