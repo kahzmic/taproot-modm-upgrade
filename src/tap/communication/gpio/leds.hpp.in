@@ -73,6 +73,15 @@ public:
         Blue
     };
 
+%% elif options[":dev_board"] == "dm-mc02"
+    /**
+     * The DM-MC02 has no GPIO LEDs. Its only LED is a WS2812 RGB LED driven over SPI6,
+     * which this class doesn't support yet, so there are no pins to set.
+     */
+    enum LedPin
+    {
+    };
+
 %% endif
 
     /**
