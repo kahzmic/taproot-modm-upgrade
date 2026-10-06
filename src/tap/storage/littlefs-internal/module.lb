@@ -21,7 +21,8 @@ def init(module):
 
 def prepare(module, options):
     module.depends(":ext:littlefs")
-    return True
+    # TODO H7 port. The flash layout and programming code are STM32F4-only.
+    return options[":dev_board"] != "dm-mc02"
 
 def build(env):
     env.outbasepath = "taproot/src/tap/storage/littlefs-internal"

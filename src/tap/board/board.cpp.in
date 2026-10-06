@@ -21,6 +21,23 @@
 
 // In simulation, we'll let modm's default implementation handle this.
 #ifndef PLATFORM_HOSTED
+%% if options[":dev_board"] == "dm-mc02"
+/**
+ * The H7 supply configuration (the low byte of PWR_CR3: LDOEN, BYPASS, ...) can be written only
+ * once after a power-on reset, and must be written before the voltage scaling or the system clock
+ * is changed (RM0468 Rev 3, 6.8.4 p.287). PWR_CR3 is reset only by a power-on reset, so a reset
+ * from the reset button or a debugger keeps the value. An invalid value locks the register with
+ * the default supply and only a power cycle clears it. modm calls this right after reset, as in
+ * its nucleo_h723zg board. The STM32H723 has no SMPS; the board supplies the core from the LDO.
+ *
+ * The board has no plain GPIO LEDs, so modm's default modm_abandon is used.
+ */
+modm_extern_c void modm_initialize_platform()
+{
+    Rcc::configurePowerSource(Rcc::PowerSource::Ldo);
+}
+
+%% else
 modm_extern_c void modm_abandon(const modm::AssertionInfo &)
 {
     Board::LedsPort::setOutput();
@@ -33,4 +50,6 @@ modm_extern_c void modm_abandon(const modm::AssertionInfo &)
     }
 }
 
+%% endif
 #endif
+

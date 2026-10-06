@@ -22,6 +22,7 @@ import board_info_parser
 REMOTE_UART_PORTS_BY_BOARD = {
     "rm-dev-board-a": "Uart1",
     "rm-dev-board-c": "Uart3",
+    "dm-mc02": "Uart5",
 }
 
 class Remote(Module):
