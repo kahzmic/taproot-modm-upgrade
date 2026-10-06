@@ -23,11 +23,13 @@ sys.path.append(repopath("scripts/lbuild-helpers"))
 MCU_VARIANTS_BY_BOARD = {
     "rm-dev-board-a": "stm32f427iih6",
     "rm-dev-board-c": "stm32f407igh6",
+    "dm-mc02": "stm32h723vgt6",
 }
 
 DEFAULT_MODM_OPTIONS_BY_BOARD = {
     "rm-dev-board-a": "",
     "rm-dev-board-c": "",
+    "dm-mc02": "",
 }
 
 def get_modm_repo_lb_file() -> str:
