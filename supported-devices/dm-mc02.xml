@@ -1,0 +1,17 @@
+<board>
+    <!-- UART5 RX (PD2) is the DBUS input, inverted in hardware on the board -->
+    <can-pins>
+        <gpio alias="Can1Rx" name="GpioD0"></gpio>
+        <gpio alias="Can1Tx" name="GpioD1"></gpio>
+        <gpio alias="Can2Rx" name="GpioB5"></gpio>
+        <gpio alias="Can2Tx" name="GpioB6"></gpio>
+    </can-pins>
+    <gpio-pins>
+    </gpio-pins>
+    <uart-ports>
+        <uart sync="true" name="1" tx="GpioA9" rx="GpioA10"></uart>
+        <uart sync="false" name="5" rx="GpioD2"></uart>
+        <uart sync="false" name="7" tx="GpioE8" rx="GpioE7"></uart>
+        <uart sync="true" name="10" tx="GpioE3" rx="GpioE2"></uart>
+    </uart-ports>
+</board>
