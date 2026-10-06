@@ -82,5 +82,5 @@ def build(env):
         "pin_mappings": pin_mappings,
     }
     env.outbasepath = "taproot/src/tap/board"
-    env.copy("board.cpp")
+    env.template("board.cpp.in", "board.cpp")
     env.template(f"{board_name}/board.hpp.in", "board.hpp")
