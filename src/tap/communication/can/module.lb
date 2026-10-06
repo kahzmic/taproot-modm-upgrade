@@ -19,6 +19,13 @@ import sys
 sys.path.append(repopath("scripts/lbuild-helpers"))
 import board_info_parser
 
+# bxCAN on STM32F4, FDCAN on STM32H7
+CAN_IMPL_BY_BOARD = {
+    "rm-dev-board-a": "can_bxcan.cpp.in",
+    "rm-dev-board-c": "can_bxcan.cpp.in",
+    "dm-mc02": "can_fdcan.cpp.in",
+}
+
 def init(module):
     module.name = ":communication:can"
     module.description = "CAN I/O interface wrappers"
@@ -48,4 +55,4 @@ def build(env):
     env.copy("can_rx_listener.cpp")
     env.copy("can_rx_listener.hpp")
     env.copy("can.hpp")
-    env.template("can.cpp.in", "can.cpp")
+    env.template(CAN_IMPL_BY_BOARD[env[":dev_board"]], "can.cpp")
