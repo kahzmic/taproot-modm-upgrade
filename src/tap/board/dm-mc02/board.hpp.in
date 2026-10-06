@@ -1,0 +1,192 @@
+/*
+ * Copyright (c) 2026 Advanced Robotics at the University of Washington <robomstr@uw.edu>
+ *
+ * This file is part of Taproot.
+ *
+ * Taproot is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Taproot is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Taproot.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef TAPROOT_BOARD_HPP_
+#define TAPROOT_BOARD_HPP_
+
+#ifndef PLATFORM_HOSTED
+#include "modm/architecture/interface/clock.hpp"
+#include "modm/platform.hpp"
+
+using namespace modm::platform;
+#else
+#include "modm/math/units.hpp"
+#endif
+
+namespace Board
+{
+using namespace modm::literals;
+
+/**
+ * STM32H723 running at 480 MHz from the external 24 MHz crystal.
+ *
+ * The frequencies and PLL factors match Damiao's FDCAN example CubeMX project
+ * (CtrBoard-H7_FDCAN.ioc, github.com/dmBots/DM-MC02): SYSCLK 480 MHz, AHB 240 MHz, all APBs
+ * 120 MHz, PLL1Q 80 MHz for FDCAN and SPI1/2/3.
+ * The list of constants follows modm's nucleo_h723zg board.
+ */
+struct SystemClock
+{
+    static constexpr uint32_t Hse = 24_MHz;
+
+    static constexpr uint32_t SysClk = 480_MHz;
+    static constexpr uint32_t Pll1Q = 80_MHz;
+
+    static constexpr uint32_t Hclk = SysClk;  // D1CPRE = 1
+    static constexpr uint32_t Frequency = Hclk;
+    // Max 275 MHz
+    static constexpr uint32_t Ahb = Hclk / 2;  // HPRE = 2
+    static constexpr uint32_t Ahb1 = Ahb;
+    static constexpr uint32_t Ahb2 = Ahb;
+    static constexpr uint32_t Ahb3 = Ahb;
+    static constexpr uint32_t Ahb4 = Ahb;
+    // Max 137.5 MHz
+    static constexpr uint32_t Apb1 = Ahb / 2;  // D2PPRE1
+    static constexpr uint32_t Apb2 = Ahb / 2;  // D2PPRE2
+    static constexpr uint32_t Apb3 = Ahb / 2;  // D1PPRE
+    static constexpr uint32_t Apb4 = Ahb / 2;  // D3PPRE
+
+    static constexpr uint32_t Adc1 = Ahb1;
+    static constexpr uint32_t Adc2 = Ahb1;
+    static constexpr uint32_t Adc3 = Ahb4;
+
+    // SPI1/2/3 kernel clock: SPI123SEL reset value is PLL1Q
+    static constexpr uint32_t Spi1 = Pll1Q;
+    static constexpr uint32_t Spi2 = Pll1Q;
+    static constexpr uint32_t Spi3 = Pll1Q;
+    static constexpr uint32_t Spi4 = Apb2;
+    static constexpr uint32_t Spi5 = Apb2;
+    static constexpr uint32_t Spi6 = Apb4;
+
+    static constexpr uint32_t Usart1 = Apb2;
+    static constexpr uint32_t Usart2 = Apb1;
+    static constexpr uint32_t Usart3 = Apb1;
+    static constexpr uint32_t Uart4 = Apb1;
+    static constexpr uint32_t Uart5 = Apb1;
+    static constexpr uint32_t Usart6 = Apb2;
+    static constexpr uint32_t Uart7 = Apb1;
+    static constexpr uint32_t Uart8 = Apb1;
+    static constexpr uint32_t Uart9 = Apb2;
+    static constexpr uint32_t Usart10 = Apb2;
+
+    // FDCAN kernel clock: FDCANSEL = PLL1Q, set in enable()
+    static constexpr uint32_t Fdcan1 = Pll1Q;
+    static constexpr uint32_t Fdcan2 = Pll1Q;
+    static constexpr uint32_t Fdcan3 = Pll1Q;
+
+    static constexpr uint32_t I2c1 = Apb1;
+    static constexpr uint32_t I2c2 = Apb1;
+    static constexpr uint32_t I2c3 = Apb1;
+    static constexpr uint32_t I2c4 = Apb4;
+    static constexpr uint32_t I2c5 = Apb1;
+
+    static constexpr uint32_t Apb1Timer = Apb1 * 2;
+    static constexpr uint32_t Apb2Timer = Apb2 * 2;
+    static constexpr uint32_t Timer1 = Apb2Timer;
+    static constexpr uint32_t Timer2 = Apb1Timer;
+    static constexpr uint32_t Timer3 = Apb1Timer;
+    static constexpr uint32_t Timer4 = Apb1Timer;
+    static constexpr uint32_t Timer5 = Apb1Timer;
+    static constexpr uint32_t Timer6 = Apb1Timer;
+    static constexpr uint32_t Timer7 = Apb1Timer;
+    static constexpr uint32_t Timer8 = Apb2Timer;
+    static constexpr uint32_t Timer12 = Apb1Timer;
+    static constexpr uint32_t Timer13 = Apb1Timer;
+    static constexpr uint32_t Timer14 = Apb1Timer;
+    static constexpr uint32_t Timer15 = Apb2Timer;
+    static constexpr uint32_t Timer16 = Apb2Timer;
+    static constexpr uint32_t Timer17 = Apb2Timer;
+    static constexpr uint32_t Timer23 = Apb1Timer;
+    static constexpr uint32_t Timer24 = Apb1Timer;
+
+    static bool inline enable()
+    {
+#ifndef PLATFORM_HOSTED
+        // 480 MHz needs voltage scale 0, as in modm's nucleo_h723zg board. The supply itself
+        // (LDO) is selected once in modm_initialize_platform(), see board.cpp.
+        Rcc::setVoltageScaling(Rcc::VoltageScaling::Scale0);
+
+        Rcc::enableExternalCrystal();  // 24 MHz
+        const Rcc::PllFactors pllFactors1{
+            .range = Rcc::PllInputRange::MHz8_16,
+            .pllM = 2,   //  24 MHz / 2  =  12 MHz
+            .pllN = 40,  //  12 MHz * 40 = 480 MHz
+            .pllP = 1,   // 480 MHz / 1  = 480 MHz = F_cpu
+            .pllQ = 6,   // 480 MHz / 6  =  80 MHz = FDCAN, SPI1/2/3
+            .pllR = 2,   // 480 MHz / 2  = 240 MHz, unused
+        };
+        Rcc::enablePll1(Rcc::PllSource::Hse, pllFactors1);
+        Rcc::setCanClockSource(Rcc::CanClockSource::Pll1Q);
+        Rcc::setFlashLatency<Ahb>();
+
+        Rcc::setAhbPrescaler(Rcc::AhbPrescaler::Div2);
+        Rcc::setApb1Prescaler(Rcc::Apb1Prescaler::Div2);
+        Rcc::setApb2Prescaler(Rcc::Apb2Prescaler::Div2);
+        Rcc::setApb3Prescaler(Rcc::Apb3Prescaler::Div2);
+        Rcc::setApb4Prescaler(Rcc::Apb4Prescaler::Div2);
+
+        Rcc::updateCoreFrequency<Frequency>();
+        Rcc::enableSystemClock(Rcc::SystemClockSource::Pll1P);
+#endif
+
+        return true;
+    }
+};
+
+#ifndef PLATFORM_HOSTED
+
+%% macro configure_pins(comment, pin_group_name, pins)
+    %% if pins|length > 0
+// {{ comment }}
+        {% if pins|length > 0 %}
+            %% for pin in pins
+using {{ pin_group_name }}{{ pin }} = {{ pin_mappings[pin] }};
+            %% endfor
+        {% endif %}
+using {{ pin_group_name }}s = SoftwareGpioPort<{% for pin in pins %}{{ pin_group_name }}{{ pin }}{% if not loop.last %}, {% endif %}{% endfor %}>;
+    %% endif
+%% endmacro
+
+{{ configure_pins("Initialize analog input pins", "AnalogInPin", analog_in_pins) }}
+{{ configure_pins("Initialize PWM pins", "PWMOutPin", pwm_pins) }}
+{{ configure_pins("Initialize digital input pins", "DigitalInPin", digital_in_pins) }}
+{{ configure_pins("Initialize digital output pins", "DigitalOutPin", digital_out_pins) }}
+// Enables for the two XT30 power outputs and the switchable 5V rail (PWM header)
+using PowerOut1 = GpioOutputC14;
+using PowerOut2 = GpioOutputC13;
+using Power5V = GpioOutputC15;
+using PowerOuts = SoftwareGpioPort<PowerOut1, PowerOut2, Power5V>;
+
+#endif
+
+inline void initialize()
+{
+    // init clock
+    SystemClock::enable();
+#ifndef PLATFORM_HOSTED
+    SysTickTimer::initialize<SystemClock>();
+    // turn on the power outputs, like the Type A board does with its 24V outputs
+    PowerOuts::setOutput(modm::Gpio::High);
+#endif
+}
+
+}  // namespace Board
+
+#endif  // TAPROOT_BOARD_HPP_
+
