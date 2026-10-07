@@ -102,16 +102,16 @@ public:
      */
     mockable void removeFromMotorManager(const DjiMotor& motor);
 
-    mockable DjiMotor const* getCan1Motor(MotorId motorId);
+%% for bus in can_buses
+    mockable DjiMotor const* getCan{{ bus }}Motor(MotorId motorId);
 
-    mockable DjiMotor const* getCan2Motor(MotorId motorId);
-
+%% endfor
 protected:
     Drivers* drivers;
 
-    DjiMotor* can1MotorStore[DJI_MOTORS_PER_CAN] = {0};
-    DjiMotor* can2MotorStore[DJI_MOTORS_PER_CAN] = {0};
-
+%% for bus in can_buses
+    DjiMotor* can{{ bus }}MotorStore[DJI_MOTORS_PER_CAN] = {0};{{ "\n" if loop.last }}
+%% endfor
     void addMotorToManager(DjiMotor** canMotorStore, DjiMotor* const motor);
 
     void serializeMotorStoreSendData(
