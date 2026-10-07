@@ -33,9 +33,9 @@ namespace tap::motor::motorsim
 {
 void DjiMotorSimHandler::resetMotorSims()
 {
-    nextMotorIdToEncode[can::CanBus::CAN_BUS1] = MotorId::MOTOR1;
-    nextMotorIdToEncode[can::CanBus::CAN_BUS2] = MotorId::MOTOR1;
-
+%% for bus in can_buses
+    nextMotorIdToEncode[can::CanBus::CAN_BUS{{ bus }}] = MotorId::MOTOR1;{{ "\n" if loop.last }}
+%% endfor
     for (auto& it : motorIDToMotorSimMap)
     {
         it.second->reset();

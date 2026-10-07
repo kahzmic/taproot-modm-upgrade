@@ -39,7 +39,7 @@ MotorMenu::MotorMenu(
     int entriesToDisplay)
     : modm::AbstractMenu<DummyAllocator<modm::IAbstractView> >(stack, MOTOR_MENU_ID),
       drivers(drivers),
-      verticalScroll(drivers, DjiMotorTxHandler::DJI_MOTORS_PER_CAN * 2, entriesToDisplay),
+      verticalScroll(drivers, DjiMotorTxHandler::DJI_MOTORS_PER_CAN * {{ can_buses|length }}, entriesToDisplay),
       motorSpecificMenu(getViewStack(), drivers, nullptr)
 {
 }
@@ -57,14 +57,16 @@ void MotorMenu::drawMotor(CanBus canBus, int normalizedMotorId)
             canBusName = "CAN1";
             printCursor = (normalizedMotorId == verticalScroll.getCursorIndex());
             break;
-        case CanBus::CAN_BUS2:
-            motor = drivers->djiMotorTxHandler.getCan2Motor(
+%% for bus in can_buses[1:]
+        case CanBus::CAN_BUS{{ bus }}:
+            motor = drivers->djiMotorTxHandler.getCan{{ bus }}Motor(
                 NORMALIZED_ID_TO_DJI_MOTOR(normalizedMotorId));
-            canBusName = "CAN2";
+            canBusName = "CAN{{ bus }}";
             printCursor =
-                ((normalizedMotorId + DjiMotorTxHandler::DJI_MOTORS_PER_CAN) ==
+                ((normalizedMotorId + {{ (bus - 1) ~ " * " if bus > 2 }}DjiMotorTxHandler::DJI_MOTORS_PER_CAN) ==
                  verticalScroll.getCursorIndex());
             break;
+%% endfor
     }
 
     getViewStack()->getDisplay() << (printCursor ? ">" : " ") << canBusName << " Motor "
@@ -104,47 +106,49 @@ void MotorMenu::draw()
         drawMotor(CanBus::CAN_BUS1, motorId);
     }
 
-    auto can2MinIndex = std::max(
+%% for bus in can_buses[1:]
+{{ "\n" if not loop.first }}    auto can{{ bus }}MinIndex = std::max(
         0,
-        verticalScroll.getSmallestIndexDisplayed() - DjiMotorTxHandler::DJI_MOTORS_PER_CAN);
-    auto can2MaxIndex = std::min(
+        verticalScroll.getSmallestIndexDisplayed() - {{ (bus - 1) ~ " * " if bus > 2 }}DjiMotorTxHandler::DJI_MOTORS_PER_CAN);
+    auto can{{ bus }}MaxIndex = std::min(
         DjiMotorTxHandler::DJI_MOTORS_PER_CAN - 1,
-        verticalScroll.getLargestIndexDisplayed() - DjiMotorTxHandler::DJI_MOTORS_PER_CAN);
-    for (int motorId = can2MinIndex; motorId <= can2MaxIndex; ++motorId)
+        verticalScroll.getLargestIndexDisplayed() - {{ (bus - 1) ~ " * " if bus > 2 }}DjiMotorTxHandler::DJI_MOTORS_PER_CAN);
+    for (int motorId = can{{ bus }}MinIndex; motorId <= can{{ bus }}MaxIndex; ++motorId)
     {
-        drawMotor(CanBus::CAN_BUS2, motorId);
+        drawMotor(CanBus::CAN_BUS{{ bus }}, motorId);
     }
+%% endfor
 }
 
 void MotorMenu::update() {}
 
 bool MotorMenu::hasChanged()
 {
-    uint8_t newCan1MotorStatus = 0;
-    uint8_t newCan2MotorStatus = 0;
+%% for bus in can_buses
+    uint8_t newCan{{ bus }}MotorStatus = 0;
+%% endfor
     for (uint32_t motorId = MotorId::MOTOR1; motorId <= MotorId::MOTOR8; ++motorId)
     {
         DjiMotor const* currMotor = NULL;
-
-        currMotor = drivers->djiMotorTxHandler.getCan1Motor(static_cast<MotorId>(motorId));
+%% for bus in can_buses
+{{ "\n" }}        currMotor = drivers->djiMotorTxHandler.getCan{{ bus }}Motor(static_cast<MotorId>(motorId));
         if (currMotor != nullptr && currMotor->isMotorOnline())
         {
-            newCan1MotorStatus |= (1 << DJI_MOTOR_TO_NORMALIZED_ID(motorId));
+            newCan{{ bus }}MotorStatus |= (1 << DJI_MOTOR_TO_NORMALIZED_ID(motorId));
         }
-
-        currMotor = drivers->djiMotorTxHandler.getCan2Motor(static_cast<MotorId>(motorId));
-        if (currMotor != nullptr && currMotor->isMotorOnline())
-        {
-            newCan2MotorStatus |= (1 << DJI_MOTOR_TO_NORMALIZED_ID(motorId));
-        }
+%% endfor
     }
 
-    bool motorStatusChanged = (can1PrevDisplayedStatus != newCan1MotorStatus) ||
-                              (can2PrevDisplayedStatus != newCan2MotorStatus);
-
-    can1PrevDisplayedStatus = newCan1MotorStatus;
-    can2PrevDisplayedStatus = newCan2MotorStatus;
-
+%% for bus in can_buses
+%% if loop.first
+    bool motorStatusChanged = (can{{ bus }}PrevDisplayedStatus != newCan{{ bus }}MotorStatus) ||
+%% else
+                              (can{{ bus }}PrevDisplayedStatus != newCan{{ bus }}MotorStatus){{ ";\n" if loop.last else " ||" }}
+%% endif
+%% endfor
+%% for bus in can_buses
+    can{{ bus }}PrevDisplayedStatus = newCan{{ bus }}MotorStatus;{{ "\n" if loop.last }}
+%% endfor
     return verticalScroll.acknowledgeCursorChanged() || motorStatusChanged;
 }
 
@@ -168,16 +172,22 @@ void MotorMenu::shortButtonPress(modm::MenuButtons::Button button)
                         new (&motorSpecificMenu) MotorSpecificMenu(getViewStack(), drivers, motor));
                 }
             }
-            else  // idx between [8, 16)
+%% for bus in can_buses[1:]
+%% if not loop.last
+            else if (idx < {{ bus }} * DjiMotorTxHandler::DJI_MOTORS_PER_CAN)  // idx between [{{ 8 * (bus - 1) }}, {{ 8 * bus }})
+%% else
+            else  // idx between [{{ 8 * (bus - 1) }}, {{ 8 * bus }})
+%% endif
             {
-                const DjiMotor* motor = drivers->djiMotorTxHandler.getCan2Motor(
-                    NORMALIZED_ID_TO_DJI_MOTOR(idx - DjiMotorTxHandler::DJI_MOTORS_PER_CAN));
+                const DjiMotor* motor = drivers->djiMotorTxHandler.getCan{{ bus }}Motor(
+                    NORMALIZED_ID_TO_DJI_MOTOR(idx - {{ (bus - 1) ~ " * " if bus > 2 }}DjiMotorTxHandler::DJI_MOTORS_PER_CAN));
                 if (motor != nullptr)
                 {
                     this->getViewStack()->push(
                         new (&motorSpecificMenu) MotorSpecificMenu(getViewStack(), drivers, motor));
                 }
             }
+%% endfor
             break;
         }
         case modm::MenuButtons::DOWN:
