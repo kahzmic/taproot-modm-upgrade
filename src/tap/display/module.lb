@@ -28,8 +28,8 @@ class Motor(Module):
 
     def build(self, env):
         env.outbasepath = "taproot/src/tap/display"
-        env.copy("motor_menu.cpp")
-        env.copy("motor_menu.hpp")
+        env.template("motor_menu.cpp.in", "motor_menu.cpp")
+        env.template("motor_menu.hpp.in", "motor_menu.hpp")
         env.copy("motor_specific_menu.cpp")
         env.copy("motor_specific_menu.hpp")
 
