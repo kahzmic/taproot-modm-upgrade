@@ -11,6 +11,12 @@
     <option name="modm:target">{{ mcu }}</option>
 
 {% for o in modm_hal_options %}    {{ o }}{% endfor %}
+%% if options[":dev_board"] == "dm-mc02"
+    <!-- 3 hardware TX buffers per FDCAN, the same as the 3 bxCAN TX mailboxes on Type A/C -->
+    <option name="modm:platform:can:1:message_ram.tx_fifo_elements">3</option>
+    <option name="modm:platform:can:2:message_ram.tx_fifo_elements">3</option>
+    <option name="modm:platform:can:3:message_ram.tx_fifo_elements">3</option>
+%% endif
   </options>
   <modules>
     <module>modm:architecture:clock</module>
