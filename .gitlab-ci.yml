@@ -99,6 +99,10 @@ before_script:
   needs: ["Type C: Generate Test Project"]
   dependencies: ["Type C: Generate Test Project"]
 
+.dm_mc02_config_dependencies:
+  needs: ["Type MC02: Generate Test Project"]
+  dependencies: ["Type MC02: Generate Test Project"]
+
 .mcb_build:
   stage: "Build all Targets"
   only: *default_only
@@ -179,6 +183,23 @@ before_script:
   variables:
     BOARD_TYPE: type_c
 
+"Type MC02: Generate Test Project":
+  needs: []
+  stage: Generate Test Project
+  only: *default_only
+  extends:
+    - .run_lbuild
+  before_script:
+    - cd test-project
+    - sed -i '/<!-- For RoboMaster Development Board Type A -->/,/<!-- End For RoboMaster Development Board Type A -->/c\' project.xml
+    - sed -i '/<!-- For Damiao DM-MC02.*--> <!--/c\' project.xml
+    - sed -i '/--> <!-- End For Damiao DM-MC02 -->/c\' project.xml
+    # no H7 internal flash driver in modm yet
+    - sed -i '/<module>taproot:storage:littlefs-internal<\/module>/d' project.xml
+    - cd ..
+  variables:
+    BOARD_TYPE: dm_mc02
+
 # Type A CI
 "Type A: MCB Build":
   extends:
@@ -222,6 +243,28 @@ before_script:
     - .tests_build
   variables:
     BOARD_TYPE: type_c
+
+# Type MC02 CI
+"Type MC02: MCB Build":
+  extends:
+    - .dm_mc02_config_dependencies
+    - .mcb_build
+  variables:
+    BOARD_TYPE: dm_mc02
+
+"Type MC02: Sim Build":
+  extends:
+    - .dm_mc02_config_dependencies
+    - .sim_build
+  variables:
+    BOARD_TYPE: dm_mc02
+
+"Type MC02: Tests Build":
+  extends:
+    - .dm_mc02_config_dependencies
+    - .tests_build
+  variables:
+    BOARD_TYPE: dm_mc02
 
 # Pages deploy
 
