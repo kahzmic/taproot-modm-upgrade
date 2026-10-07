@@ -27,7 +27,7 @@ def build(env):
 
     env.copy("can_serializer.cpp")
     env.copy("can_serializer.hpp")
-    env.copy("dji_motor_sim_handler.cpp")
+    env.template("dji_motor_sim_handler.cpp.in", "dji_motor_sim_handler.cpp")
     env.copy("dji_motor_sim_handler.hpp")
     env.copy("motor_sim.cpp")
     env.copy("motor_sim.hpp")
