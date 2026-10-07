@@ -31,21 +31,26 @@ namespace tap::can
 {
 CanRxHandler::CanRxHandler(Drivers* drivers)
     : drivers(drivers),
-      messageHandlerStoreCan1(),
-      messageHandlerStoreCan2()
+%% for bus in can_buses
+      messageHandlerStoreCan{{ bus }}(){{ "," if not loop.last }}
+%% endfor
 {
 }
 
 void CanRxHandler::attachReceiveHandler(CanRxListener* const listener)
 {
-    if (listener->canBus == can::CanBus::CAN_BUS1)
-    {
-        attachReceiveHandler(listener, messageHandlerStoreCan1);
-    }
+%% for bus in can_buses
+%% if loop.first
+    if (listener->canBus == can::CanBus::CAN_BUS{{ bus }})
+%% elif not loop.last
+    else if (listener->canBus == can::CanBus::CAN_BUS{{ bus }})
+%% else
     else
+%% endif
     {
-        attachReceiveHandler(listener, messageHandlerStoreCan2);
+        attachReceiveHandler(listener, messageHandlerStoreCan{{ bus }});
     }
+%% endfor
 }
 
 void CanRxHandler::attachReceiveHandler(
@@ -82,17 +87,13 @@ void CanRxHandler::pollCanData()
 {
     modm::can::Message rxMessage;
 
-    // handle incoming CAN 1 messages
-    if (drivers->can.getMessage(CanBus::CAN_BUS1, &rxMessage))
+%% for bus in can_buses
+{{ "\n" if not loop.first }}    // handle incoming CAN {{ bus }} messages
+    if (drivers->can.getMessage(CanBus::CAN_BUS{{ bus }}, &rxMessage))
     {
-        processReceivedCanData(rxMessage, messageHandlerStoreCan1);
+        processReceivedCanData(rxMessage, messageHandlerStoreCan{{ bus }});
     }
-
-    // handle incoming CAN 2 messages
-    if (drivers->can.getMessage(CanBus::CAN_BUS2, &rxMessage))
-    {
-        processReceivedCanData(rxMessage, messageHandlerStoreCan2);
-    }
+%% endfor
 }
 
 void CanRxHandler::processReceivedCanData(
@@ -115,14 +116,18 @@ void CanRxHandler::processReceivedCanData(
 
 void CanRxHandler::removeReceiveHandler(const CanRxListener& canRxListener)
 {
-    if (canRxListener.canBus == CanBus::CAN_BUS1)
-    {
-        removeReceiveHandler(canRxListener, messageHandlerStoreCan1);
-    }
+%% for bus in can_buses
+%% if loop.first
+    if (canRxListener.canBus == CanBus::CAN_BUS{{ bus }})
+%% elif not loop.last
+    else if (canRxListener.canBus == CanBus::CAN_BUS{{ bus }})
+%% else
     else
+%% endif
     {
-        removeReceiveHandler(canRxListener, messageHandlerStoreCan2);
+        removeReceiveHandler(canRxListener, messageHandlerStoreCan{{ bus }});
     }
+%% endfor
 }
 
 void CanRxHandler::removeReceiveHandler(

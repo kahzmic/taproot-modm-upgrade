@@ -169,14 +169,14 @@ TEST(
 
 TEST(
     DjiMotorTerminalSerialHandler,
-    terminalSerialCallback__can_3_or_motor_0_or_motor_9_or_motor_neg1_returns_false)
+    terminalSerialCallback__can_4_or_motor_0_or_motor_9_or_motor_neg1_returns_false)
 {
     Drivers drivers;
     DjiMotorTerminalSerialHandler serialHandler(&drivers);
     tap::stub::TerminalDeviceStub terminalDevice(&drivers);
     modm::IOStream stream(terminalDevice);
 
-    char input1[] = "can 3";
+    char input1[] = "can 4";
     char input2[] = "motor 0";
     char input3[] = "motor 9";
     char input4[] = "motor -1";
@@ -329,7 +329,7 @@ TEST(DjiMotorTerminalSerialHandler, terminalSerialCallback__invalid_can_id)
     tap::stub::TerminalDeviceStub terminalDevice(&drivers);
     modm::IOStream stream(terminalDevice);
 
-    char input[] = "can 3";
+    char input[] = "can 4";
     EXPECT_FALSE(serialHandler.terminalSerialCallback(input, stream, false));
 
     std::string output = terminalDevice.readAllItemsFromWriteBufferToString();
