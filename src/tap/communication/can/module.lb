@@ -19,6 +19,9 @@ import sys
 sys.path.append(repopath("scripts/lbuild-helpers"))
 import board_info_parser
 
+# FDCAN interrupt priority per bus (bxCAN sets 9 and 12 in can_bxcan.cpp.in)
+CAN_IRQ_PRIORITY_BY_BUS = {1: 9, 2: 12, 3: 15}
+
 # bxCAN on STM32F4, FDCAN on STM32H7
 CAN_IMPL_BY_BOARD = {
     "rm-dev-board-a": "can_bxcan.cpp.in",
@@ -48,6 +51,7 @@ def build(env):
     env.substitutions = {
         "can_pins": can_pins,
         "can_buses": can_buses,
+        "can_irq_priority": CAN_IRQ_PRIORITY_BY_BUS,
         "use_sim": env.has_module(":motor:motorsim")
     }
 
