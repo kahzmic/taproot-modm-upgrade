@@ -83,7 +83,7 @@ bool DjiMotorTerminalSerialHandler::terminalSerialCallback(
             }
             char* indexEnd;
             canBus = strtol(arg, &indexEnd, 10);
-            if (indexEnd != arg + strlen(arg) || (canBus != 1 && canBus != 2))
+            if (indexEnd != arg + strlen(arg) || ({% for bus in can_buses %}canBus != {{ bus }}{{ " && " if not loop.last }}{% endfor %}))
             {
                 outputStream << "motorinfo: Invalid can bus ID" << modm::endl << USAGE;
                 return false;
@@ -124,11 +124,13 @@ bool DjiMotorTerminalSerialHandler::printInfo(modm::IOStream& outputStream)
 {
     if (printAll)
     {
-        outputStream << "CAN 1:" << modm::endl;
-        printAllMotorInfo(&DjiMotorTxHandler::getCan1Motor, outputStream);
+%% for bus in can_buses
+%% if not loop.first
         outputStream.flush();
-        outputStream << "CAN 2:" << modm::endl;
-        printAllMotorInfo(&DjiMotorTxHandler::getCan2Motor, outputStream);
+%% endif
+        outputStream << "CAN {{ bus }}:" << modm::endl;
+        printAllMotorInfo(&DjiMotorTxHandler::getCan{{ bus }}Motor, outputStream);
+%% endfor
     }
     else if (!canBusValid && !motorIdValid)
     {
@@ -137,44 +139,46 @@ bool DjiMotorTerminalSerialHandler::printInfo(modm::IOStream& outputStream)
     }
     else if (canBusValid && !motorIdValid)
     {
-        if (canBus == 1)
-        {
-            printAllMotorInfo(&DjiMotorTxHandler::getCan1Motor, outputStream);
-        }
+%% for bus in can_buses
+%% if loop.first
+        if (canBus == {{ bus }})
+%% elif not loop.last
+        else if (canBus == {{ bus }})
+%% else
         else
+%% endif
         {
-            printAllMotorInfo(&DjiMotorTxHandler::getCan2Motor, outputStream);
+            printAllMotorInfo(&DjiMotorTxHandler::getCan{{ bus }}Motor, outputStream);
         }
+%% endfor
     }
     else if (!canBusValid && motorIdValid)
     {
-        outputStream << "CAN 1:" << modm::endl;
+%% for bus in can_buses
+        outputStream << "CAN {{ bus }}:" << modm::endl;
         getMotorInfoToString(
-            drivers->djiMotorTxHandler.getCan1Motor(
+            drivers->djiMotorTxHandler.getCan{{ bus }}Motor(
                 static_cast<MotorId>(motorId + tap::motor::MOTOR1)),
             outputStream);
-        outputStream << "CAN 2:" << modm::endl;
-        getMotorInfoToString(
-            drivers->djiMotorTxHandler.getCan2Motor(
-                static_cast<MotorId>(motorId + tap::motor::MOTOR1)),
-            outputStream);
+%% endfor
     }
     else
     {
-        if (canBus == 1)
-        {
-            getMotorInfoToString(
-                drivers->djiMotorTxHandler.getCan1Motor(
-                    static_cast<MotorId>(motorId + tap::motor::MOTOR1)),
-                outputStream);
-        }
+%% for bus in can_buses
+%% if loop.first
+        if (canBus == {{ bus }})
+%% elif not loop.last
+        else if (canBus == {{ bus }})
+%% else
         else
+%% endif
         {
             getMotorInfoToString(
-                drivers->djiMotorTxHandler.getCan2Motor(
+                drivers->djiMotorTxHandler.getCan{{ bus }}Motor(
                     static_cast<MotorId>(motorId + tap::motor::MOTOR1)),
                 outputStream);
         }
+%% endfor
     }
     return true;
 }
