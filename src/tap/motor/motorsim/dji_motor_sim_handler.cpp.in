@@ -132,3 +132,4 @@ bool DjiMotorSimHandler::getNextMotorId(can::CanBus bus)
 }  // namespace tap::motor::motorsim
 
 #endif  // PLATFORM_HOSTED
+
