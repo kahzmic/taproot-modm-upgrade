@@ -27,8 +27,8 @@ class TerminalSerial(Module):
     def build(self, env):
         env.outbasepath = "taproot/src/tap/motor"
 
-        env.copy("dji_motor_terminal_serial_handler.hpp")
-        env.copy("dji_motor_terminal_serial_handler.cpp")
+        env.template("dji_motor_terminal_serial_handler.hpp.in", "dji_motor_terminal_serial_handler.hpp")
+        env.template("dji_motor_terminal_serial_handler.cpp.in", "dji_motor_terminal_serial_handler.cpp")
 
 class Pwm(Module):
     def init(self, module):
@@ -73,8 +73,8 @@ def build(env):
     env.copy("dji_motor_encoder.cpp")
     env.copy("dji_motor_encoder.hpp")
     env.copy("dji_motor_ids.hpp")
-    env.copy("dji_motor_tx_handler.cpp")
-    env.copy("dji_motor_tx_handler.hpp")
+    env.template("dji_motor_tx_handler.cpp.in", "dji_motor_tx_handler.cpp")
+    env.template("dji_motor_tx_handler.hpp.in", "dji_motor_tx_handler.hpp")
     env.copy("m3508_constants.hpp")
     env.copy("motor_constants.hpp")
     env.copy("motor_interface.hpp")

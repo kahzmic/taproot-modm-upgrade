@@ -168,3 +168,4 @@ public:
 }  // namespace tap::can
 
 #endif  // TAPROOT_CAN_RX_HANDLER_HPP_
+
