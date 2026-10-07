@@ -78,3 +78,4 @@ private:
 }  // namespace tap
 
 #endif  // TAPROOT_DJI_MOTOR_TERMINAL_SERIAL_HANDLER_HPP_
+

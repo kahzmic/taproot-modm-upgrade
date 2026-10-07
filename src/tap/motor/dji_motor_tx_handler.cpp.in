@@ -227,3 +227,4 @@ DjiMotor const* DjiMotorTxHandler::getCan2Motor(MotorId motorId)
 }
 
 }  // namespace tap::motor
+
