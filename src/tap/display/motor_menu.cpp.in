@@ -192,3 +192,4 @@ void MotorMenu::shortButtonPress(modm::MenuButtons::Button button)
 }
 }  // namespace display
 }  // namespace tap
+
