@@ -47,110 +47,76 @@ void DjiMotorTxHandler::addMotorToManager(DjiMotor* motor)
     // add new motor to either the can1 or can2 motor store
     // because we checked to see if the motor is overloaded, we will
     // never have to worry about overfilling the CanxMotorStore array
-    if (motor->getCanBus() == tap::can::CanBus::CAN_BUS1)
-    {
-        addMotorToManager(can1MotorStore, motor);
-    }
+%% for bus in can_buses
+%% if loop.first
+    if (motor->getCanBus() == tap::can::CanBus::CAN_BUS{{ bus }})
+%% elif not loop.last
+    else if (motor->getCanBus() == tap::can::CanBus::CAN_BUS{{ bus }})
+%% else
     else
+%% endif
     {
-        addMotorToManager(can2MotorStore, motor);
+        addMotorToManager(can{{ bus }}MotorStore, motor);
     }
+%% endfor
 }
 
 void DjiMotorTxHandler::encodeAndSendCanData()
 {
     // set up new can messages to be sent via CAN bus 1 and 2
-    modm::can::Message can1MessageLow(
+%% for bus in can_buses
+    modm::can::Message can{{ bus }}MessageLow(
         CAN_DJI_LOW_IDENTIFIER,
         CAN_DJI_MESSAGE_SEND_LENGTH,
         uint64_t{0},
         false);
-    modm::can::Message can1MessageHigh(
+    modm::can::Message can{{ bus }}MessageHigh(
         CAN_DJI_HIGH_IDENTIFIER,
         CAN_DJI_MESSAGE_SEND_LENGTH,
         uint64_t{0},
         false);
-    modm::can::Message can1Message6020Current(
+    modm::can::Message can{{ bus }}Message6020Current(
         CAN_DJI_6020_CURRENT_IDENTIFIER,
         CAN_DJI_MESSAGE_SEND_LENGTH,
         uint64_t{0},
-        false);
-    modm::can::Message can2MessageLow(
-        CAN_DJI_LOW_IDENTIFIER,
-        CAN_DJI_MESSAGE_SEND_LENGTH,
-        uint64_t{0},
-        false);
-    modm::can::Message can2MessageHigh(
-        CAN_DJI_HIGH_IDENTIFIER,
-        CAN_DJI_MESSAGE_SEND_LENGTH,
-        uint64_t{0},
-        false);
-    modm::can::Message can2Message6020Current(
-        CAN_DJI_6020_CURRENT_IDENTIFIER,
-        CAN_DJI_MESSAGE_SEND_LENGTH,
-        uint64_t{0},
-        false);
-
-    bool can1ValidMotorMessageLow = false;
-    bool can1ValidMotorMessageHigh = false;
-    bool can1ValidMotorMessage6020Current = false;
-    bool can2ValidMotorMessageLow = false;
-    bool can2ValidMotorMessageHigh = false;
-    bool can2ValidMotorMessage6020Current = false;
-
+        false);{{ "\n" if loop.last }}
+%% endfor
+%% for bus in can_buses
+    bool can{{ bus }}ValidMotorMessageLow = false;
+    bool can{{ bus }}ValidMotorMessageHigh = false;
+    bool can{{ bus }}ValidMotorMessage6020Current = false;{{ "\n" if loop.last }}
+%% endfor
+%% for bus in can_buses
     serializeMotorStoreSendData(
-        can1MotorStore,
-        &can1MessageLow,
-        &can1MessageHigh,
-        &can1Message6020Current,
-        &can1ValidMotorMessageLow,
-        &can1ValidMotorMessageHigh,
-        &can1ValidMotorMessage6020Current);
+        can{{ bus }}MotorStore,
+        &can{{ bus }}MessageLow,
+        &can{{ bus }}MessageHigh,
+        &can{{ bus }}Message6020Current,
+        &can{{ bus }}ValidMotorMessageLow,
+        &can{{ bus }}ValidMotorMessageHigh,
+        &can{{ bus }}ValidMotorMessage6020Current);
 
-    serializeMotorStoreSendData(
-        can2MotorStore,
-        &can2MessageLow,
-        &can2MessageHigh,
-        &can2Message6020Current,
-        &can2ValidMotorMessageLow,
-        &can2ValidMotorMessageHigh,
-        &can2ValidMotorMessage6020Current);
-
+%% endfor
     bool messageSuccess = true;
 
-    if (drivers->can.isReadyToSend(can::CanBus::CAN_BUS1))
+%% for bus in can_buses
+    if (drivers->can.isReadyToSend(can::CanBus::CAN_BUS{{ bus }}))
     {
-        if (can1ValidMotorMessageLow)
+        if (can{{ bus }}ValidMotorMessageLow)
         {
-            messageSuccess &= drivers->can.sendMessage(can::CanBus::CAN_BUS1, can1MessageLow);
+            messageSuccess &= drivers->can.sendMessage(can::CanBus::CAN_BUS{{ bus }}, can{{ bus }}MessageLow);
         }
-        if (can1ValidMotorMessageHigh)
+        if (can{{ bus }}ValidMotorMessageHigh)
         {
-            messageSuccess &= drivers->can.sendMessage(can::CanBus::CAN_BUS1, can1MessageHigh);
+            messageSuccess &= drivers->can.sendMessage(can::CanBus::CAN_BUS{{ bus }}, can{{ bus }}MessageHigh);
         }
-        if (can1ValidMotorMessage6020Current)
+        if (can{{ bus }}ValidMotorMessage6020Current)
         {
             messageSuccess &=
-                drivers->can.sendMessage(can::CanBus::CAN_BUS1, can1Message6020Current);
+                drivers->can.sendMessage(can::CanBus::CAN_BUS{{ bus }}, can{{ bus }}Message6020Current);
         }
-    }
-    if (drivers->can.isReadyToSend(can::CanBus::CAN_BUS2))
-    {
-        if (can2ValidMotorMessageLow)
-        {
-            messageSuccess &= drivers->can.sendMessage(can::CanBus::CAN_BUS2, can2MessageLow);
-        }
-        if (can2ValidMotorMessageHigh)
-        {
-            messageSuccess &= drivers->can.sendMessage(can::CanBus::CAN_BUS2, can2MessageHigh);
-        }
-        if (can2ValidMotorMessage6020Current)
-        {
-            messageSuccess &=
-                drivers->can.sendMessage(can::CanBus::CAN_BUS2, can2Message6020Current);
-        }
-    }
-
+    }{{ "\n" if loop.last }}
+%% endfor
     if (!messageSuccess)
     {
         RAISE_ERROR(drivers, "sendMessage failure");
@@ -193,14 +159,18 @@ void DjiMotorTxHandler::serializeMotorStoreSendData(
 
 void DjiMotorTxHandler::removeFromMotorManager(const DjiMotor& motor)
 {
-    if (motor.getCanBus() == tap::can::CanBus::CAN_BUS1)
-    {
-        removeFromMotorManager(motor, can1MotorStore);
-    }
+%% for bus in can_buses
+%% if loop.first
+    if (motor.getCanBus() == tap::can::CanBus::CAN_BUS{{ bus }})
+%% elif not loop.last
+    else if (motor.getCanBus() == tap::can::CanBus::CAN_BUS{{ bus }})
+%% else
     else
+%% endif
     {
-        removeFromMotorManager(motor, can2MotorStore);
+        removeFromMotorManager(motor, can{{ bus }}MotorStore);
     }
+%% endfor
 }
 
 void DjiMotorTxHandler::removeFromMotorManager(const DjiMotor& motor, DjiMotor** motorStore)
@@ -214,17 +184,13 @@ void DjiMotorTxHandler::removeFromMotorManager(const DjiMotor& motor, DjiMotor**
     motorStore[id] = nullptr;
 }
 
-DjiMotor const* DjiMotorTxHandler::getCan1Motor(MotorId motorId)
+%% for bus in can_buses
+DjiMotor const* DjiMotorTxHandler::getCan{{ bus }}Motor(MotorId motorId)
 {
     uint32_t index = DJI_MOTOR_TO_NORMALIZED_ID(motorId);
-    return index > DJI_MOTOR_TO_NORMALIZED_ID(tap::motor::MOTOR8) ? nullptr : can1MotorStore[index];
+    return index > DJI_MOTOR_TO_NORMALIZED_ID(tap::motor::MOTOR8) ? nullptr : can{{ bus }}MotorStore[index];
 }
 
-DjiMotor const* DjiMotorTxHandler::getCan2Motor(MotorId motorId)
-{
-    uint32_t index = DJI_MOTOR_TO_NORMALIZED_ID(motorId);
-    return index > DJI_MOTOR_TO_NORMALIZED_ID(tap::motor::MOTOR8) ? nullptr : can2MotorStore[index];
-}
-
+%% endfor
 }  // namespace tap::motor
 

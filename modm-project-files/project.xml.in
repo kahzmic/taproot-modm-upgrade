@@ -63,6 +63,7 @@
     <module>modm:platform:spi:2</module>
     <module>modm:platform:adc:3</module>
 %% elif options[":dev_board"] == "dm-mc02"
+    <module>modm:platform:can:3</module>
     <module>modm:platform:timer:1</module>
     <module>modm:platform:timer:2</module>
     <module>modm:platform:timer:3</module>

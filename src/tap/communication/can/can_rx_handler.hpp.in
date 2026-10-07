@@ -131,18 +131,14 @@ public:
 protected:
     Drivers* drivers;
 
+%% for bus in can_buses
     /**
-     * Stores pointers to the `CanRxListeners` for CAN 1, referenced when
+     * Stores pointers to the `CanRxListeners` for CAN {{ bus }}, referenced when
      * a new message is received.
      */
-    CanRxListener* messageHandlerStoreCan1[CAN_BINS];
+    CanRxListener* messageHandlerStoreCan{{ bus }}[CAN_BINS];
 
-    /**
-     * Stores pointers to the `CanRxListeners` for CAN 2, referenced when
-     * a new message is received.
-     */
-    CanRxListener* messageHandlerStoreCan2[CAN_BINS];
-
+%% endfor
 #if defined(PLATFORM_HOSTED) && defined(ENV_UNIT_TESTS)
 public:
 #endif
@@ -161,7 +157,7 @@ public:
 
     inline CanRxListener** getHandlerStore(CanBus bus)
     {
-        return bus == CanBus::CAN_BUS1 ? messageHandlerStoreCan1 : messageHandlerStoreCan2;
+        return {% for bus in can_buses[:-1] %}bus == CanBus::CAN_BUS{{ bus }} ? messageHandlerStoreCan{{ bus }} : {% endfor %}messageHandlerStoreCan{{ can_buses[-1] }};
     }
 };  // class CanRxHandler
 

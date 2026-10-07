@@ -66,9 +66,9 @@ private:
 
     VerticalScrollLogicHandler verticalScroll;
 
-    uint8_t can1PrevDisplayedStatus;
-    uint8_t can2PrevDisplayedStatus;
-
+%% for bus in can_buses
+    uint8_t can{{ bus }}PrevDisplayedStatus;{{ "\n" if loop.last }}
+%% endfor
     void drawMotor(tap::can::CanBus canBus, int normalizedMotorId);
     MotorSpecificMenu motorSpecificMenu;
 };
