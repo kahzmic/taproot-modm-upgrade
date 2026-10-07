@@ -17,6 +17,10 @@
 
 # TODO this module needs some cleaning up, see this issue: https://gitlab.com/aruw/controls/taproot/-/issues/51
 
+import sys
+sys.path.append(repopath("scripts/lbuild-helpers"))
+import board_info_parser
+
 class Motor(Module):
     def init(self, module):
         module.name = ":display:motor"
@@ -27,6 +31,11 @@ class Motor(Module):
         return True
 
     def build(self, env):
+        # one CanNRx pin per CAN bus in the board XML, e.g. [1, 2]
+        metadata = board_info_parser.parse_board_info(env[":dev_board"])
+        can_buses = [int(pin.get("alias")[len("Can"):-len("Rx")]) for pin in metadata.find("can-pins") if pin.get("alias").endswith("Rx")]
+        env.substitutions = {"can_buses": can_buses}
+
         env.outbasepath = "taproot/src/tap/display"
         env.template("motor_menu.cpp.in", "motor_menu.cpp")
         env.template("motor_menu.hpp.in", "motor_menu.hpp")
