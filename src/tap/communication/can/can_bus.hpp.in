@@ -30,3 +30,4 @@ enum class CanBus
 }
 
 #endif  // TAPROOT_CAN_BUS_HPP_
+
