@@ -40,7 +40,52 @@ using namespace modm::literals;
 void tap::can::Can::initialize()
 {
 #ifndef PLATFORM_HOSTED
-    // TODO(dm-mc02 FDCAN PR): FDCAN backend. Until then CAN is not initialized on H7.
+    // RX FIFO blocking mode (overwriteOnOverrun = false, RM0468 61.4.2): once modm's RX queue and
+    // the RX FIFO are full, new frames are dropped. modm's overwrite mode can return a torn frame.
+    // The filter setters enter init mode, which resets the TX/RX FIFO state, so filters are only
+    // set here.
+    // initialize CAN 1
+    Fdcan1::connect<{{ can_pins["Can1Rx"] }}::Rx, {{ can_pins["Can1Tx"] }}::Tx>(Gpio::InputType::PullUp);
+    Fdcan1::initialize<Board::SystemClock, 1000_kbps>(9, Fdcan1::Mode::Normal, false);
+    // receive every message for CAN 1
+    Fdcan1::setStandardFilter(
+        0,
+        Fdcan1::FilterConfig::Fifo0,
+        modm::can::StandardIdentifier(0),
+        modm::can::StandardMask(0));
+    Fdcan1::setExtendedFilter(
+        0,
+        Fdcan1::FilterConfig::Fifo0,
+        modm::can::ExtendedIdentifier(0),
+        modm::can::ExtendedMask(0));
+    Fdcan2::connect<{{ can_pins["Can2Rx"] }}::Rx, {{ can_pins["Can2Tx"] }}::Tx>(Gpio::InputType::PullUp);
+    Fdcan2::initialize<Board::SystemClock, 1000_kbps>(12, Fdcan2::Mode::Normal, false);
+    // receive every message for CAN 2
+    Fdcan2::setStandardFilter(
+        0,
+        Fdcan2::FilterConfig::Fifo0,
+        modm::can::StandardIdentifier(0),
+        modm::can::StandardMask(0));
+    Fdcan2::setExtendedFilter(
+        0,
+        Fdcan2::FilterConfig::Fifo0,
+        modm::can::ExtendedIdentifier(0),
+        modm::can::ExtendedMask(0));
+%% if num_can_buses > 2
+    Fdcan3::connect<{{ can_pins["Can3Rx"] }}::Rx, {{ can_pins["Can3Tx"] }}::Tx>(Gpio::InputType::PullUp);
+    Fdcan3::initialize<Board::SystemClock, 1000_kbps>(15, Fdcan3::Mode::Normal, false);
+    // receive every message for CAN 3
+    Fdcan3::setStandardFilter(
+        0,
+        Fdcan3::FilterConfig::Fifo0,
+        modm::can::StandardIdentifier(0),
+        modm::can::StandardMask(0));
+    Fdcan3::setExtendedFilter(
+        0,
+        Fdcan3::FilterConfig::Fifo0,
+        modm::can::ExtendedIdentifier(0),
+        modm::can::ExtendedMask(0));
+%% endif
 #endif
 }
 
@@ -50,8 +95,19 @@ bool tap::can::Can::isMessageAvailable(tap::can::CanBus bus) const
     UNUSED(bus);
     return true;
 #else
-    UNUSED(bus);
-    return false;
+    switch (bus)
+    {
+        case CanBus::CAN_BUS1:
+            return Fdcan1::isMessageAvailable();
+        case CanBus::CAN_BUS2:
+            return Fdcan2::isMessageAvailable();
+%% if num_can_buses > 2
+        case CanBus::CAN_BUS3:
+            return Fdcan3::isMessageAvailable();
+%% endif
+        default:
+            return false;
+    }
 #endif
 }
 
@@ -66,9 +122,19 @@ bool tap::can::Can::getMessage(tap::can::CanBus bus, modm::can::Message* message
     return false;
 %% endif
 #else
-    UNUSED(bus);
-    UNUSED(message);
-    return false;
+    switch (bus)
+    {
+        case CanBus::CAN_BUS1:
+            return Fdcan1::getMessage(*message);
+        case CanBus::CAN_BUS2:
+            return Fdcan2::getMessage(*message);
+%% if num_can_buses > 2
+        case CanBus::CAN_BUS3:
+            return Fdcan3::getMessage(*message);
+%% endif
+        default:
+            return false;
+    }
 #endif
 }
 
@@ -78,8 +144,19 @@ bool tap::can::Can::isReadyToSend(CanBus bus) const
     UNUSED(bus);
     return true;
 #else
-    UNUSED(bus);
-    return false;
+    switch (bus)
+    {
+        case CanBus::CAN_BUS1:
+            return Fdcan1::isReadyToSend();
+        case CanBus::CAN_BUS2:
+            return Fdcan2::isReadyToSend();
+%% if num_can_buses > 2
+        case CanBus::CAN_BUS3:
+            return Fdcan3::isReadyToSend();
+%% endif
+        default:
+            return false;
+    }
 #endif
 }
 
@@ -94,9 +171,19 @@ bool tap::can::Can::sendMessage(CanBus bus, const modm::can::Message& message)
     return true;
 %% endif
 #else
-    UNUSED(bus);
-    UNUSED(message);
-    return false;
+    switch (bus)
+    {
+        case CanBus::CAN_BUS1:
+            return Fdcan1::sendMessage(message);
+        case CanBus::CAN_BUS2:
+            return Fdcan2::sendMessage(message);
+%% if num_can_buses > 2
+        case CanBus::CAN_BUS3:
+            return Fdcan3::sendMessage(message);
+%% endif
+        default:
+            return false;
+    }
 #endif
 }
 
