@@ -69,6 +69,10 @@ private:
     uint8_t can1PrevDisplayedStatus;
     uint8_t can2PrevDisplayedStatus;
 
+%% if num_can_buses > 2
+    uint8_t can3PrevDisplayedStatus;
+
+%% endif
     void drawMotor(tap::can::CanBus canBus, int normalizedMotorId);
     MotorSpecificMenu motorSpecificMenu;
 };

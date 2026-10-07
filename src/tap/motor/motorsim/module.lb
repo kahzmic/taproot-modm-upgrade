@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Taproot.  If not, see <https://www.gnu.org/licenses/>.
 
+import sys
+sys.path.append(repopath("scripts/lbuild-helpers"))
+import board_info_parser
+
 def init(module):
     module.name = ":motor:motorsim"
     module.description = "Motor Simulation"
@@ -23,6 +27,11 @@ def prepare(module, options):
     return True
 
 def build(env):
+    # one CanNRx pin per CAN bus in the board XML
+    metadata = board_info_parser.parse_board_info(env[":dev_board"])
+    num_can_buses = sum(1 for pin in metadata.find("can-pins") if pin.get("alias").endswith("Rx"))
+    env.substitutions = {"num_can_buses": num_can_buses}
+
     env.outbasepath = "taproot/src/tap/motor/motorsim"
 
     env.copy("can_serializer.cpp")

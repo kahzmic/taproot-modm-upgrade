@@ -106,12 +106,20 @@ public:
 
     mockable DjiMotor const* getCan2Motor(MotorId motorId);
 
+%% if num_can_buses > 2
+    mockable DjiMotor const* getCan3Motor(MotorId motorId);
+
+%% endif
 protected:
     Drivers* drivers;
 
     DjiMotor* can1MotorStore[DJI_MOTORS_PER_CAN] = {0};
     DjiMotor* can2MotorStore[DJI_MOTORS_PER_CAN] = {0};
 
+%% if num_can_buses > 2
+    DjiMotor* can3MotorStore[DJI_MOTORS_PER_CAN] = {0};
+
+%% endif
     void addMotorToManager(DjiMotor** canMotorStore, DjiMotor* const motor);
 
     void serializeMotorStoreSendData(

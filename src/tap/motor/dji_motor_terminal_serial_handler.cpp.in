@@ -83,7 +83,11 @@ bool DjiMotorTerminalSerialHandler::terminalSerialCallback(
             }
             char* indexEnd;
             canBus = strtol(arg, &indexEnd, 10);
+%% if num_can_buses > 2
+            if (indexEnd != arg + strlen(arg) || (canBus != 1 && canBus != 2 && canBus != 3))
+%% else
             if (indexEnd != arg + strlen(arg) || (canBus != 1 && canBus != 2))
+%% endif
             {
                 outputStream << "motorinfo: Invalid can bus ID" << modm::endl << USAGE;
                 return false;
@@ -129,6 +133,11 @@ bool DjiMotorTerminalSerialHandler::printInfo(modm::IOStream& outputStream)
         outputStream.flush();
         outputStream << "CAN 2:" << modm::endl;
         printAllMotorInfo(&DjiMotorTxHandler::getCan2Motor, outputStream);
+%% if num_can_buses > 2
+        outputStream.flush();
+        outputStream << "CAN 3:" << modm::endl;
+        printAllMotorInfo(&DjiMotorTxHandler::getCan3Motor, outputStream);
+%% endif
     }
     else if (!canBusValid && !motorIdValid)
     {
@@ -141,6 +150,12 @@ bool DjiMotorTerminalSerialHandler::printInfo(modm::IOStream& outputStream)
         {
             printAllMotorInfo(&DjiMotorTxHandler::getCan1Motor, outputStream);
         }
+%% if num_can_buses > 2
+        else if (canBus == 3)
+        {
+            printAllMotorInfo(&DjiMotorTxHandler::getCan3Motor, outputStream);
+        }
+%% endif
         else
         {
             printAllMotorInfo(&DjiMotorTxHandler::getCan2Motor, outputStream);
@@ -158,6 +173,13 @@ bool DjiMotorTerminalSerialHandler::printInfo(modm::IOStream& outputStream)
             drivers->djiMotorTxHandler.getCan2Motor(
                 static_cast<MotorId>(motorId + tap::motor::MOTOR1)),
             outputStream);
+%% if num_can_buses > 2
+        outputStream << "CAN 3:" << modm::endl;
+        getMotorInfoToString(
+            drivers->djiMotorTxHandler.getCan3Motor(
+                static_cast<MotorId>(motorId + tap::motor::MOTOR1)),
+            outputStream);
+%% endif
     }
     else
     {
@@ -168,6 +190,15 @@ bool DjiMotorTerminalSerialHandler::printInfo(modm::IOStream& outputStream)
                     static_cast<MotorId>(motorId + tap::motor::MOTOR1)),
                 outputStream);
         }
+%% if num_can_buses > 2
+        else if (canBus == 3)
+        {
+            getMotorInfoToString(
+                drivers->djiMotorTxHandler.getCan3Motor(
+                    static_cast<MotorId>(motorId + tap::motor::MOTOR1)),
+                outputStream);
+        }
+%% endif
         else
         {
             getMotorInfoToString(

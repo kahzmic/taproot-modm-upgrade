@@ -151,6 +151,14 @@ protected:
      */
     CanRxListener* messageHandlerStoreCan2[CAN_BINS];
 
+%% if num_can_buses > 2
+    /**
+     * Stores pointers to the `CanRxListeners` for CAN 3, referenced when
+     * a new message is received.
+     */
+    CanRxListener* messageHandlerStoreCan3[CAN_BINS];
+
+%% endif
 #if defined(PLATFORM_HOSTED) && defined(ENV_UNIT_TESTS)
 public:
 #endif
@@ -169,6 +177,12 @@ public:
 
     inline CanRxListener** getHandlerStore(CanBus bus)
     {
+%% if num_can_buses > 2
+        if (bus == CanBus::CAN_BUS3)
+        {
+            return messageHandlerStoreCan3;
+        }
+%% endif
         return bus == CanBus::CAN_BUS1 ? messageHandlerStoreCan1 : messageHandlerStoreCan2;
     }
 

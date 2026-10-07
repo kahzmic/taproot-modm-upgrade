@@ -32,7 +32,12 @@ namespace tap::can
 CanRxHandler::CanRxHandler(Drivers* drivers)
     : drivers(drivers),
       messageHandlerStoreCan1(),
+%% if num_can_buses > 2
+      messageHandlerStoreCan2(),
+      messageHandlerStoreCan3()
+%% else
       messageHandlerStoreCan2()
+%% endif
 {
 }
 
@@ -42,6 +47,12 @@ void CanRxHandler::attachReceiveHandler(CanRxListener* const listener)
     {
         attachReceiveHandler(listener, messageHandlerStoreCan1);
     }
+%% if num_can_buses > 2
+    else if (listener->canBus == can::CanBus::CAN_BUS3)
+    {
+        attachReceiveHandler(listener, messageHandlerStoreCan3);
+    }
+%% endif
     else
     {
         attachReceiveHandler(listener, messageHandlerStoreCan2);
@@ -93,6 +104,13 @@ void CanRxHandler::pollCanData()
     {
         processReceivedCanData(rxMessage, messageHandlerStoreCan2);
     }
+%% if num_can_buses > 2
+    // handle incoming CAN 3 messages
+    if (drivers->can.getMessage(CanBus::CAN_BUS3, &rxMessage))
+    {
+        processReceivedCanData(rxMessage, messageHandlerStoreCan3);
+    }
+%% endif
 }
 
 void CanRxHandler::processReceivedCanData(
@@ -119,6 +137,12 @@ void CanRxHandler::removeReceiveHandler(const CanRxListener& canRxListener)
     {
         removeReceiveHandler(canRxListener, messageHandlerStoreCan1);
     }
+%% if num_can_buses > 2
+    else if (canRxListener.canBus == CanBus::CAN_BUS3)
+    {
+        removeReceiveHandler(canRxListener, messageHandlerStoreCan3);
+    }
+%% endif
     else
     {
         removeReceiveHandler(canRxListener, messageHandlerStoreCan2);

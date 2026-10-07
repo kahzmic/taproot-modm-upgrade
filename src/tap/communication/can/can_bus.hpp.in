@@ -26,6 +26,9 @@ enum class CanBus
 {
     CAN_BUS1,
     CAN_BUS2,
+%% if num_can_buses > 2
+    CAN_BUS3,
+%% endif
 };
 }
 

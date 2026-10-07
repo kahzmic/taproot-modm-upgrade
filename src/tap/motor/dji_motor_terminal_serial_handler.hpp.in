@@ -58,8 +58,12 @@ private:
         "    - [all] prints all motor info\n"
         "    Or specifiy a motor id and/or can id, where\n"
         "    - [mid] is the id of a motor, in [1, 8]\n"
+%% if num_can_buses > 2
+        "    - [cid] is some the can id, in [1, 3]\n";
+%% else
         "    - [cid] is some the can id, in [1, 2]\n";
 
+%% endif
     Drivers* drivers;
 
     bool motorIdValid = false;

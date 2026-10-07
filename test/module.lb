@@ -21,6 +21,9 @@ import sys
 import os
 import platform
 
+sys.path.append(repopath("scripts/lbuild-helpers"))
+import board_info_parser
+
 MODULES_TO_MOCK = {
     ":algorithms:odometry": {
         "odometry_2d_interface_mock.hpp",
@@ -167,6 +170,11 @@ class TaprootTests(Module):
         return True
 
     def build(self, env):
+        # one CanNRx pin per CAN bus in the board XML; CAN3 tests only build on 3-bus boards
+        metadata = board_info_parser.parse_board_info(env[":dev_board"])
+        num_can_buses = sum(1 for pin in metadata.find("can-pins") if pin.get("alias").endswith("Rx"))
+        can3_tests = env.ignore_files("*_can3_tests.cpp")
+
         env.outbasepath = "taproot/test"
         if env.has_module(":display"):
             env.copy("tap/display")
@@ -178,17 +186,25 @@ class TaprootTests(Module):
         if env.has_module(":architecture:profiler"):
             env.copy("tap/architecture/profiler_tests.cpp")
         if env.has_module(":motor"):
-            env.copy("tap/motor", ignore=env.ignore_files("dji_motor_terminal_serial_handler_tests.cpp", "motorsim"))
+            env.copy("tap/motor", ignore=env.ignore_files("dji_motor_terminal_serial_handler_tests.cpp", "motorsim", "*_can3_tests.cpp"))
+            if num_can_buses > 2:
+                env.copy("tap/motor/dji_motor_tx_handler_can3_tests.cpp")
         if env.has_module(":motor:motorsim"):
-            env.copy("tap/motor/motorsim")
+            env.copy("tap/motor/motorsim", ignore=can3_tests)
+            if num_can_buses > 2:
+                env.copy("tap/motor/motorsim/dji_motor_sim_handler_can3_tests.cpp")
         if env.has_module(":motor:terminal_serial"):
             env.copy("tap/motor/dji_motor_terminal_serial_handler_tests.cpp")
+            if num_can_buses > 2:
+                env.copy("tap/motor/dji_motor_terminal_serial_handler_can3_tests.cpp")
         if env.has_module(":communication:serial"):
             env.copy("tap/communication/serial/dji_serial_tests.cpp")
         if env.has_module(":communication:serial:remote"):
             env.copy("tap/communication/serial/remote_tests.cpp")
         if env.has_module(":communication:can"):
-            env.copy("tap/communication/can")
+            env.copy("tap/communication/can", ignore=can3_tests)
+            if num_can_buses > 2:
+                env.copy("tap/communication/can/can_rx_handler_can3_tests.cpp")
         if env.has_module("taproot:communication:sensors:encoder"):
             env.copy("tap/communication/sensors/encoder/multi_encoder_tests.cpp")
             env.copy("tap/communication/sensors/encoder/wrapped_encoder_tests.cpp")

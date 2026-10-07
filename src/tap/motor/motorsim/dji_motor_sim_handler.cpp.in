@@ -36,6 +36,10 @@ void DjiMotorSimHandler::resetMotorSims()
     nextMotorIdToEncode[can::CanBus::CAN_BUS1] = MotorId::MOTOR1;
     nextMotorIdToEncode[can::CanBus::CAN_BUS2] = MotorId::MOTOR1;
 
+%% if num_can_buses > 2
+    nextMotorIdToEncode[can::CanBus::CAN_BUS3] = MotorId::MOTOR1;
+
+%% endif
     for (auto& it : motorIDToMotorSimMap)
     {
         it.second->reset();

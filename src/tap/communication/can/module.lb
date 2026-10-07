@@ -43,9 +43,12 @@ def build(env):
 
     can_pins = metadata.find("can-pins")
     can_pins = { pin.get("alias"): pin.get("name") for pin in can_pins }
+    # one CanNRx pin per CAN bus
+    num_can_buses = sum(1 for alias in can_pins if alias.endswith("Rx"))
 
     env.substitutions = {
         "can_pins": can_pins,
+        "num_can_buses": num_can_buses,
         "use_sim": env.has_module(":motor:motorsim")
     }
 
