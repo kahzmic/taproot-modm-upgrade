@@ -40,7 +40,26 @@ using namespace modm::literals;
 void tap::can::Can::initialize()
 {
 #ifndef PLATFORM_HOSTED
-    // TODO(dm-mc02 FDCAN PR): FDCAN backend. Until then CAN is not initialized on H7.
+    // RX FIFO blocking mode (overwriteOnOverrun = false, RM0468 61.4.2): once modm's RX queue and
+    // the RX FIFO are full, new frames are dropped. modm's overwrite mode can return a torn frame.
+    // The filter setters enter init mode, which resets the TX/RX FIFO state, so filters are only
+    // set here.
+%% for bus in can_buses
+    // initialize CAN {{ bus }}
+    Fdcan{{ bus }}::connect<{{ can_pins["Can%dRx" % bus] }}::Rx, {{ can_pins["Can%dTx" % bus] }}::Tx>(Gpio::InputType::PullUp);
+    Fdcan{{ bus }}::initialize<Board::SystemClock, 1000_kbps>({{ can_irq_priority[bus] }}, Fdcan{{ bus }}::Mode::Normal, false);
+    // receive every message for CAN {{ bus }}
+    Fdcan{{ bus }}::setStandardFilter(
+        0,
+        Fdcan{{ bus }}::FilterConfig::Fifo0,
+        modm::can::StandardIdentifier(0),
+        modm::can::StandardMask(0));
+    Fdcan{{ bus }}::setExtendedFilter(
+        0,
+        Fdcan{{ bus }}::FilterConfig::Fifo0,
+        modm::can::ExtendedIdentifier(0),
+        modm::can::ExtendedMask(0));
+%% endfor
 #endif
 }
 
@@ -50,8 +69,15 @@ bool tap::can::Can::isMessageAvailable(tap::can::CanBus bus) const
     UNUSED(bus);
     return true;
 #else
-    UNUSED(bus);
-    return false;
+    switch (bus)
+    {
+%% for bus in can_buses
+        case CanBus::CAN_BUS{{ bus }}:
+            return Fdcan{{ bus }}::isMessageAvailable();
+%% endfor
+        default:
+            return false;
+    }
 #endif
 }
 
@@ -66,9 +92,15 @@ bool tap::can::Can::getMessage(tap::can::CanBus bus, modm::can::Message* message
     return false;
 %% endif
 #else
-    UNUSED(bus);
-    UNUSED(message);
-    return false;
+    switch (bus)
+    {
+%% for bus in can_buses
+        case CanBus::CAN_BUS{{ bus }}:
+            return Fdcan{{ bus }}::getMessage(*message);
+%% endfor
+        default:
+            return false;
+    }
 #endif
 }
 
@@ -78,8 +110,15 @@ bool tap::can::Can::isReadyToSend(CanBus bus) const
     UNUSED(bus);
     return true;
 #else
-    UNUSED(bus);
-    return false;
+    switch (bus)
+    {
+%% for bus in can_buses
+        case CanBus::CAN_BUS{{ bus }}:
+            return Fdcan{{ bus }}::isReadyToSend();
+%% endfor
+        default:
+            return false;
+    }
 #endif
 }
 
@@ -94,9 +133,15 @@ bool tap::can::Can::sendMessage(CanBus bus, const modm::can::Message& message)
     return true;
 %% endif
 #else
-    UNUSED(bus);
-    UNUSED(message);
-    return false;
+    switch (bus)
+    {
+%% for bus in can_buses
+        case CanBus::CAN_BUS{{ bus }}:
+            return Fdcan{{ bus }}::sendMessage(message);
+%% endfor
+        default:
+            return false;
+    }
 #endif
 }
 
