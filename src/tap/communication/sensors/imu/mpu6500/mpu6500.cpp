@@ -110,41 +110,41 @@ void Mpu6500::periodicIMUUpdate()
 bool Mpu6500::read()
 {
 #ifndef PLATFORM_HOSTED
-    PT_BEGIN();
-    while (true)
+    if (!readTimeout.execute())
     {
-        PT_WAIT_UNTIL(readTimeout.execute());
-
-        mpuNssLow();
-        tx = MPU6500_ACCEL_XOUT_H | MPU6500_READ_BIT;
-        rx = 0;
-        txBuff[0] = tx;
-        PT_CALL(Board::ImuSpiMaster::transfer(&tx, &rx, 1));
-        PT_CALL(Board::ImuSpiMaster::transfer(txBuff, rxBuff, ACC_GYRO_TEMPERATURE_BUFF_RX_SIZE));
-        mpuNssHigh();
-
-        float accRawX = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff);
-        float accRawY = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff + 2);
-        float accRawZ = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff + 4);
-        imuData.accRaw = tap::algorithms::transforms::Vector(accRawX, accRawY, accRawZ);
-
-        float gyroRawX = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff + 8);
-        float gyroRawY = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff + 10);
-        float gyroRawZ = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff + 12);
-        imuData.gyroRaw = tap::algorithms::transforms::Vector(gyroRawX, gyroRawY, gyroRawZ);
-
-        applyMountingTransformToRaw(imuData);
-
-        imuData.accG =
-            (imuData.accRaw - imuData.accOffsetRaw) * GRAVITY_MPS2 / ACCELERATION_SENSITIVITY;
-
-        imuData.gyroRadPerSec = (imuData.gyroRaw - imuData.gyroOffsetRaw) / LSB_PER_RAD_PER_S;
-
-        imuData.temperature = parseTemp(static_cast<float>(rxBuff[6] << 8 | rxBuff[7]));
-
-        prevIMUDataReceivedTime = tap::arch::clock::getTimeMicroseconds();
+        return false;
     }
-    PT_END();
+
+    mpuNssLow();
+    tx = MPU6500_ACCEL_XOUT_H | MPU6500_READ_BIT;
+    rx = 0;
+    txBuff[0] = tx;
+    Board::ImuSpiMaster::transfer(&tx, &rx, 1);
+    Board::ImuSpiMaster::transfer(txBuff, rxBuff, ACC_GYRO_TEMPERATURE_BUFF_RX_SIZE);
+    mpuNssHigh();
+
+    float accRawX = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff);
+    float accRawY = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff + 2);
+    float accRawZ = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff + 4);
+    imuData.accRaw = tap::algorithms::transforms::Vector(accRawX, accRawY, accRawZ);
+
+    float gyroRawX = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff + 8);
+    float gyroRawY = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff + 10);
+    float gyroRawZ = LITTLE_ENDIAN_INT16_TO_FLOAT(rxBuff + 12);
+    imuData.gyroRaw = tap::algorithms::transforms::Vector(gyroRawX, gyroRawY, gyroRawZ);
+
+    applyMountingTransformToRaw(imuData);
+
+    imuData.accG =
+        (imuData.accRaw - imuData.accOffsetRaw) * GRAVITY_MPS2 / ACCELERATION_SENSITIVITY;
+
+    imuData.gyroRadPerSec = (imuData.gyroRaw - imuData.gyroOffsetRaw) / LSB_PER_RAD_PER_S;
+
+    imuData.temperature = parseTemp(static_cast<float>(rxBuff[6] << 8 | rxBuff[7]));
+
+    prevIMUDataReceivedTime = tap::arch::clock::getTimeMicroseconds();
+
+    return true;
 #else
     return false;
 #endif
