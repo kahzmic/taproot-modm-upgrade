@@ -29,7 +29,6 @@
 #include "tap/util_macros.hpp"
 
 #include "modm/math/geometry.hpp"
-#include "modm/processing/protothread.hpp"
 
 #define LITTLE_ENDIAN_INT16_TO_FLOAT(buff) \
     (static_cast<float>(static_cast<int16_t>((*(buff) << 8) | *(buff + 1))))
@@ -51,7 +50,7 @@ namespace tap::communication::sensors::imu::mpu6500
  * @note if you are shaking the imu while it is initializing, the offsets will likely
  *      be calibrated poorly and unexpectedly bad results may occur.
  */
-class Mpu6500 final_mockable : public ::modm::pt::Protothread, public AbstractIMU
+class Mpu6500 final_mockable : public AbstractIMU
 {
 public:
     /**
@@ -85,10 +84,10 @@ public:
     mockable void periodicIMUUpdate() override;
 
     /**
-     * Read data from the imu. This is a protothread that reads the SPI bus using
-     * nonblocking I/O.
+     * Read data from the imu if the read period has elapsed. The SPI transfer
+     * yields while waiting when called from a fiber and busy-waits otherwise.
      *
-     * @return `true` if the function is not done, `false` otherwise
+     * @return `true` if a new sample was read, `false` otherwise
      */
     mockable bool read();
 
@@ -131,8 +130,8 @@ private:
      */
     static constexpr uint8_t MPU6500_READ_BIT = 0x80;
 
-    uint8_t tx = 0;  ///< Byte used for reading data in the read protothread
-    uint8_t rx = 0;  ///< Byte used for reading data in the read protothread
+    uint8_t tx = 0;  ///< Byte used for reading data in `read()`
+    uint8_t rx = 0;  ///< Byte used for reading data in `read()`
 
     imu_heater::ImuHeater imuHeater;
 
