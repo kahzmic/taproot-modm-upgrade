@@ -30,6 +30,7 @@
     <module>modm:math:interpolation</module>
     <module>modm:math:saturation</module>
     <module>modm:processing</module>
+    <module>modm:processing:fiber</module>
     <module>modm:processing:timer</module>
     <module>modm:processing:protothread</module>
     <module>modm:platform:can:1</module>
